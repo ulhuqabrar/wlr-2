@@ -807,24 +807,6 @@ const CTA=()=>{
     </section>
   );
 };
-          transition:'background .5s cubic-bezier(.2,.8,.2,1)',
-        }}/>
-        {/* Right taper */}
-        <div ref={n=>{if(n)el.current.b2=n}} style={{
-          flex:'0 0 clamp(50px,10vw,160px)',
-          height:'clamp(140px,35vh,320px)',
-          background:invert?'#000':'#FFF',
-          transformOrigin:'right center',
-          transform:'scaleX(0)',
-          willChange:'transform',
-          transition:'background .4s ease, color .4s ease',
-        }}>
-          <TB size={14} color={bg}/>Get a quote →
-        </a>
-      </div>
-    </section>
-  );
-};
 
 /* ═══ FOOTER ═══ */
 const Footer=()=>(

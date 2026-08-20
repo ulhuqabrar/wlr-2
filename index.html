@@ -379,116 +379,23 @@ const Hero=()=>{
 /* ═══ 02 SELL / DELIVER ═══ */
 const SellDeliver=()=>{
   const red=useReducedMotion();
-  const sec=useRef(null);
-  const e=useRef({});
-  useEffect(()=>{
-    const s=sec.current;if(!s)return;
-    let r=0,tr=0,lastFlip=null;
-    const u=()=>{
-      r=0;
-      const rc=s.getBoundingClientRect(),vh=window.innerHeight,sp=rc.height-vh;
-      if(sp<=0)return;
-      const p=Math.max(0,Math.min(1,-rc.top/sp));
-      if(red)return;
-      const{b0,b1,b2,hd,pc,fr}=e.current;
-      // Three bars wipe — opposing directions
-      if(b0){const w=Math.max(0,Math.min(1,(p-.08)/.35));b0.style.transform=`scaleX(${w})`}
-      if(b1){const w=Math.max(0,Math.min(1,(p-.14)/.35));b1.style.transform=`scaleX(${w})`}
-      if(b2){const w=Math.max(0,Math.min(1,(p-.20)/.35));b2.style.transform=`scaleX(${w})`}
-      // Progress counter
-      if(pc)pc.textContent=String(Math.round(p*100)).padStart(3,'0')+'%';
-      // Flip at 50%
-      const flip=p>.5;
-      if(flip!==lastFlip){
-        lastFlip=flip;
-        if(hd){
-          hd.style.transition='none';
-          hd.style.opacity='0';
-          hd.style.transform=flip?'translateY(30px)':'translateY(-30px)';
-          requestAnimationFrame(()=>{requestAnimationFrame(()=>{
-            hd.textContent=flip?'We deliver.':'You sell.';
-            hd.style.transition='opacity .4s ease,transform .4s cubic-bezier(.2,.8,.2,1)';
-            hd.style.opacity='1';
-            hd.style.transform='translateY(0)';
-          })}
-        );
-        }
-      }
-      // Frame markers opacity
-      if(fr)fr.style.opacity=p>.05?1:0;
-    };
-    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
-    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
-    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
-  },[red]);
-
+  const sec=useRef(null);const e=useRef({});
+  useEffect(()=>{const s=sec.current;if(!s)return;let r=0,tr=0,lastFlip=null;const u=()=>{r=0;const rc=s.getBoundingClientRect(),vh=window.innerHeight,sp=rc.height-vh;if(sp<=0)return;const p=Math.max(0,Math.min(1,-rc.top/sp));if(red)return;const{b0,b1,b2,hd,pc,fr}=e.current;if(b0){const w=Math.max(0,Math.min(1,(p-.08)/.35));b0.style.transform=`scaleX(${w})`}if(b1){const w=Math.max(0,Math.min(1,(p-.14)/.35));b1.style.transform=`scaleX(${w})`}if(b2){const w=Math.max(0,Math.min(1,(p-.20)/.35));b2.style.transform=`scaleX(${w})`}if(pc)pc.textContent=String(Math.round(p*100)).padStart(3,'0')+'%';const flip=p>.5;if(flip!==lastFlip){lastFlip=flip;if(hd){hd.style.transition='none';hd.style.opacity='0';hd.style.transform=flip?'translateY(30px)':'translateY(-30px)';requestAnimationFrame(()=>{requestAnimationFrame(()=>{hd.textContent=flip?'We deliver.':'You sell.';hd.style.transition='opacity .4s ease,transform .4s cubic-bezier(.2,.8,.2,1)';hd.style.opacity='1';hd.style.transform='translateY(0)'})});}}if(fr)fr.style.opacity=p>.05?1:0};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red]);
   return(
     <section ref={sec} style={{height:'280vh',position:'relative',borderTop:'1px solid #FFF'}}>
       <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',background:'#000',color:'#FFF'}}>
-
-        {/* Three vertical tapers */}
-        <div style={{position:'absolute',inset:0,pointerEvents:'none',display:'flex',alignItems:'center',justifyContent:'center',gap:'clamp(12px,2vw,32px)',padding:'0 clamp(16px,4vw,60px)'}}>
-          {/* Left taper */}
-          <div ref={n=>{if(n)e.current.b0=n}} style={{
-            flex:'0 0 clamp(50px,10vw,160px)',
-            height:'clamp(140px,35vh,320px)',
-            background:'#FFF',
-            transformOrigin:'left center',
-            transform:'scaleX(0)',
-            willChange:'transform',
-            mixBlendMode:'difference',
-          }}/>
-          {/* Middle taper — dominant, covers the headline */}
-          <div ref={n=>{if(n)e.current.b1=n}} style={{
-            flex:'1 1 clamp(200px,40vw,600px)',
-            maxWidth:'clamp(300px,50vw,700px)',
-            height:'clamp(320px,72vh,660px)',
-            background:'#FFF',
-            transformOrigin:'right center',
-            transform:'scaleX(0)',
-            willChange:'transform',
-            mixBlendMode:'difference',
-          }}/>
-          {/* Right taper */}
-          <div ref={n=>{if(n)e.current.b2=n}} style={{
-            flex:'0 0 clamp(50px,10vw,160px)',
-            height:'clamp(140px,35vh,320px)',
-            background:'#FFF',
-            transformOrigin:'right center',
-            transform:'scaleX(0)',
-            willChange:'transform',
-            mixBlendMode:'difference',
-          }}/>
+        <div style={{position:'absolute',inset:0,pointerEvents:'none'}}>
+          <div ref={n=>{if(n)e.current.b0=n}} style={{position:'absolute',left:0,right:0,top:'18%',height:'12%',background:'#FFF',transformOrigin:'left center',transform:'scaleX(0)',willChange:'transform',mixBlendMode:'difference'}}/>
+          <div ref={n=>{if(n)e.current.b1=n}} style={{position:'absolute',left:0,right:0,top:'41%',height:'12%',background:'#FFF',transformOrigin:'right center',transform:'scaleX(0)',willChange:'transform',mixBlendMode:'difference'}}/>
+          <div ref={n=>{if(n)e.current.b2=n}} style={{position:'absolute',left:0,right:0,top:'64%',height:'12%',background:'#FFF',transformOrigin:'left center',transform:'scaleX(0)',willChange:'transform',mixBlendMode:'difference'}}/>
         </div>
-
-        {/* Top label + progress */}
-        <div ref={n=>{if(n)e.current.fr=n}} style={{
-          position:'absolute',top:60,left:32,right:32,display:'flex',justifyContent:'space-between',
-          fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',
-          textTransform:'uppercase',opacity:0,mixBlendMode:'difference',color:'#FFF',
-        }}>
-          <span>The partnership, in two words</span>
-          <span ref={n=>{if(n)e.current.pc=n}}>000%</span>
+        <div ref={n=>{if(n)e.current.fr=n}} style={{position:'absolute',top:90,left:32,right:32,display:'flex',justifyContent:'space-between',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:0,mixBlendMode:'difference',color:'#FFF'}}>
+          <span>The partnership, in two words</span><span ref={n=>{if(n)e.current.pc=n}}>000%</span>
         </div>
-
-        {/* Center heading — mix-blend inverts where tapers cross */}
         <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none',mixBlendMode:'difference'}}>
-          <h2 ref={n=>{if(n)e.current.hd=n}} style={{
-            margin:0,textAlign:'center',fontFamily:'Geist',
-            fontSize:'clamp(64px,14vw,200px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:1.08,
-          }}>You sell.</h2>
+          <h2 ref={n=>{if(n)e.current.hd=n}} style={{margin:0,textAlign:'center',fontFamily:'Geist',fontSize:'clamp(64px,14vw,200px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:1.08}}>You sell.</h2>
         </div>
-
-        {/* Bottom copy */}
-        <p style={{
-          position:'absolute',bottom:90,left:32,right:32,margin:0,maxWidth:620,
-          fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.6,opacity:.7,
-          mixBlendMode:'difference',
-        }}>
-          You own the relationship, the pitch and the invoice. We run production behind
-          the scenes — on your templates, in your voice, to your deadlines. Your clients
-          never learn our name, and that is the entire point.
-        </p>
+        <p style={{position:'absolute',bottom:90,left:32,right:32,margin:0,maxWidth:620,fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.6,opacity:.7,mixBlendMode:'difference'}}>You own the relationship, the pitch and the invoice. We run production behind the scenes — on your templates, in your voice, to your deadlines. Your clients never learn our name, and that is the entire point.</p>
       </div>
     </section>
   );

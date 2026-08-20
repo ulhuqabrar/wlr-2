@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>White Label Resell — White-label SEO, content, web &amp; analytics for agencies</title>
+<meta name="description" content="White Label Resell is the production bench behind agencies. SEO, content, web development, paid media and analytics delivered under your brand." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:clip}
+html,body{background:#000;color:#FFF}
+body{font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip}
+body::-webkit-scrollbar{width:0}
+::selection{background:#FFF;color:#000}
+a{color:inherit;text-decoration:none}
+a:focus-visible{outline:2px solid #FFF;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+@keyframes mfwd{from{transform:translateX(0)}to{transform:translateX(-33.333%)}}
+@keyframes mrev{from{transform:translateX(-33.333%)}to{transform:translateX(0)}}
+@keyframes glitchLine{0%{transform:translateX(0);opacity:.3}50%{transform:translateX(5px);opacity:.6}100%{transform:translateX(-2px);opacity:0}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes barPulse{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes bounce{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-8px)}}
+@keyframes pulseDot{0%,100%{opacity:.6}50%{opacity:1}}
+.ba-stage{--split:70%;position:relative;width:100%;height:100vh;overflow:hidden}
+.ba-before{position:absolute;left:0;top:0;bottom:0;width:var(--split);background:#FFF;color:#000;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(40px,5vw,80px);z-index:1;transition:none}
+.ba-after{position:absolute;left:var(--split);top:0;bottom:0;width:calc(100% - var(--split));background:#000;color:#FFF;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(40px,5vw,80px);z-index:1;transition:none}
+.ba-divider{position:absolute;left:var(--split);top:0;bottom:0;width:2px;background:rgba(128,128,128,.4);z-index:10;pointer-events:none;transform:translateX(-1px)}
+.ba-marker{position:absolute;left:var(--split);top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border:1px solid #000;display:grid;place-items:center;z-index:11;pointer-events:none}
+.ba-num{font-family:Geist;font-weight:500;letter-spacing:-.045em;line-height:.92}
+.ba-label{font-family:"Geist Mono",monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.6}
+.ba-meta{font-family:"Geist Mono",monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;opacity:.5;margin-top:clamp(8px,1vw,14px)}
+.ba-desc{margin:clamp(16px,2vw,28px) 0 0;max-width:340px;font-size:clamp(13px,1vw,15px);line-height:1.6;opacity:.65}
+.ba-progress{position:absolute;bottom:clamp(24px,3vh,48px);left:var(--split);transform:translateX(-50%);z-index:12;display:flex;align-items:center;gap:12px;pointer-events:none}
+.ba-progress-line{width:clamp(100px,14vw,200px);height:1px;background:rgba(128,128,128,.3);position:relative}
+.ba-progress-dot{position:absolute;top:50%;left:var(--split);transform:translate(-50%,-50%);width:6px;height:6px;background:currentColor;border-radius:50%}
+@media(max-width:768px){
+  .ba-stage{--split:0%!important;height:auto;min-height:100vh;display:flex;flex-direction:column}
+  .ba-before{position:relative;left:auto;width:100%;height:auto;min-height:50vh;padding:clamp(32px,6vw,48px)}
+  .ba-after{position:relative;left:auto;width:100%;height:auto;min-height:50vh;padding:clamp(32px,6vw,48px)}
+  .ba-divider{display:none}
+  .ba-marker{display:none}
+  .ba-progress{display:none}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback}=React;
+
+/* ═══ HELPERS ═══ */
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const range=(p,start,end)=>clamp01((p-start)/(end-start));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const viewportProgress=(rect,vh)=>{const trigger=vh*.85,end=vh*.15;return clamp01((trigger-rect.top)/(trigger-end))};
+const stickyProgress=(rect,vh)=>{const sp=rect.height-vh;return sp>0?clamp01(-rect.top/sp):0};
+const EASE='cubic-bezier(.16,1,.3,1)';
+
+/* ═══ HOOKS ═══ */
+const useReducedMotion=()=>{const[r,setR]=useState(false);useEffect(()=>{const mq=window.matchMedia('(prefers-reduced-motion:reduce)');setR(mq.matches);const h=e=>setR(e.matches);mq.addEventListener('change',h);return()=>mq.removeEventListener('change',h)},[]);return r};
+const useInView=(th=0.2)=>{const ref=useRef(null);const[seen,setSeen]=useState(false);useEffect(()=>{const el=ref.current;if(!el)return;const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){setSeen(true);io.disconnect()}},{threshold:th,rootMargin:'0px 0px -10% 0px'});io.observe(el);return()=>io.disconnect()},[th]);return[ref,seen]};
+
+/* ═══ NUMBER COUNTER ═══ */
+const useCountUp=(target,duration=2000,active=false)=>{const[val,setVal]=useState(0);useEffect(()=>{if(!active)return;let raf;const start=performance.now();const animate=(now)=>{const elapsed=now-start;const progress=Math.min(elapsed/duration,1);const eased=1-Math.pow(1-progress,3);setVal(Math.round(target*eased));if(progress<1)raf=requestAnimationFrame(animate)};raf=requestAnimationFrame(animate);return()=>cancelAnimationFrame(raf)},[active,target,duration]);return val};
+
+/* ═══ SHARED ═══ */
+const TB=({size=16,color='currentColor',gap=2})=>(
+  <span style={{display:'inline-flex',alignItems:'flex-end',gap,height:size}}>
+    {[.66,1,.82].map((h,i)=><span key={i} style={{width:size*.22,height:`${h*100}%`,background:color}}/>)}
+  </span>
+);
+const K=({children,s={}})=>(
+  <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:16,...s}}>{children}</div>
+);
+
+/* ═══ SCROLL PERCENTAGE ═══ */
+const ScrollPct=()=>{
+  const ref=useRef(null);
+  useEffect(()=>{let r=0,tr=0;const u=()=>{r=0;const h=document.documentElement.scrollHeight-window.innerHeight;const p=h>0?clamp01(window.scrollY/h):0;if(ref.current)ref.current.textContent=String(Math.round(p*100)).padStart(2,'0')+'%'};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};window.addEventListener('scroll',on,{passive:true});return()=>{window.removeEventListener('scroll',on);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[]);
+  return <div ref={ref} style={{position:'fixed',bottom:28,right:32,zIndex:100,mixBlendMode:'difference',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3,pointerEvents:'none',color:'#FFF'}}>00%</div>;
+};
+
+/* ═══ CASE DATA ═══ */
+const CASES=[
+  {id:'01',name:'GUILD GOLF CARTS',services:'SEO + PPC + GMB + WORDPRESS',year:'2024 → PRESENT',category:'RETAIL · FIVE LOCATIONS',start:66,end:444,multiplier:'6.7×',timeline:['JAN 2024','SYSTEM BUILD','GROWTH','JUN 2025','444 LEADS'],systems:['TECHNICAL SEO','CONTENT PRODUCTION','PAID SEARCH','GMB OPERATIONS','WORDPRESS REBUILD','CALLRAIL TRACKING'],challenge:'A five-location golf cart dealer with strong showrooms and almost no digital footprint — 66 leads a month at the start of 2024.',approach:'Full WordPress rebuild, geo-targeted paid search across five cities, an 80+/mo local citation engine, GMB operations, and CallRail tracking on every line.',result:'A 6.7× lift to the all-time peak of 444 leads in June 2025. Portland GMB doubled year over year. Now expanding into a custom operations CRM and AI voice agent.',data:[66,147,140,156,193,210,227,198,213,193,133,138,197,215,315,337,367,444,427,395,320,254,203,149,202,224,274]},
+  {id:'02',name:'UNEMPLOYMENT SOCIETY',services:'CONTENT + SCHEMA + ANALYTICS',year:'2026',category:'EDUCATION · CAREER TRANSITIONS',headline:'A search destination, not a website.',description:'A 12-month program to catch people at the hardest moment of their careers and route them into Pepelwerk. We built the analytics spine, the schema, and an AI-driven editorial flywheel that publishes at volume without losing voice.',systems:['WIX → WORDPRESS MIGRATION','SCAI CONTENT ENGINE','SCHEMA + ANALYTICS SPINE','PEPELWERK HANDOFF'],systemValues:[1.0,0.72,0.5,0.26]},
+  {id:'03',name:'FLAT BID MOVING',services:'PPC + WEB DESIGN',year:'2024',category:'MOVING · SAN DIEGO',headline:'A premium rebuild for a premium mover.',description:'Complete website redesign built around the customization story that separates Flat Bid from commodity movers — then a disciplined paid + organic system on top.',metrics:[['1,000','SEO ARTICLES'],['60','DAY REDESIGN']],exclusivity:10,exclusivityLabel:'PPC AD GROUPS · SAN DIEGO ONLY',territory:'We don\'t run paid search for any other mover in San Diego county. Flat Bid owns the market with us.'},
+];
+
+/* ═══ TEAM DATA ═══ */
+const teamData=[
+  {name:'Christian Clark',role:'Founder',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/1697726084291.jpeg',dept:'leadership'},
+  {name:'Himanshu Raikwar',role:'Lead Digital Designer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Himanshu-Raikwar-1024x1024.png',dept:'design'},
+  {name:'Mohammad Muneeb',role:'Lead SEO Specialist',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Mohammad-Muneeb-1024x1024.png',dept:'seo'},
+  {name:'Anil Raikwar',role:'Analytics Engineer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Anil-Raikwar.png',dept:'analytics'},
+  {name:'Haider Ali',role:'SEO Specialist',image:'https://whitelabelresell.com/wp-content/uploads/elementor/thumbs/Haider-Ali-rqg7xs8a0bnqe844b332hjurrpz1a11ezafcq7nbb4.png',dept:'seo'},
+  {name:'Brandon Carroll',role:'Acquisition Specialist',image:'https://whitelabelresell.com/wp-content/uploads/elementor/thumbs/Brandon-Carroll-rqg7xs8a0bnqe844b332hjurrpz1a11ezafcq7nbb4.png',dept:'client-success'},
+  {name:'Taofeek Abdulrauf',role:'Cloud Engineer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Taofeek-Abdulrauf-1024x1024.png',dept:'engineering'},
+  {name:'Munir Nadayako',role:'Web Developer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Munir-Nadayako-1024x1022.png',dept:'development'},
+  {name:'Mcjethro Kalu',role:'Frontend Developer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Mcjethro-Kalu-1.png',dept:'development'},
+  {name:'Asad Ehsan',role:'Administrator',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Asad-Ehsan-1021x1024.png',dept:'operations'},
+  {name:'Zubair Tayyib',role:'Jr UI/UX Designer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Zubair-Muhammad-Tayyib.png',dept:'design'},
+  {name:'Sochima Chukwu',role:'Jr Web Developer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Sochi-1024x1016.png',dept:'development'},
+  {name:'Nathaniel Duku',role:'Jr Client Success Manager',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Nathaniel-Abiodun-Duku-1019x1024.png',dept:'client-success'},
+];
+const departments=[{id:'all',label:'ALL'},{id:'leadership',label:'LEADERSHIP'},{id:'design',label:'DESIGN'},{id:'seo',label:'SEO'},{id:'development',label:'DEVELOPMENT'},{id:'analytics',label:'ANALYTICS'},{id:'engineering',label:'ENGINEERING'},{id:'client-success',label:'CLIENT SUCCESS'},{id:'operations',label:'OPERATIONS'}];
+
+/* ══════════════════════════════════════════════════════════════
+   NAV — switches pages instead of navigating to URLs
+   ══════════════════════════════════════════════════════════════ */
+const NL=({label,page,active,mobile,onNav})=>{
+  const[h,setH]=useState(false);
+  return(
+    <a href="#" onClick={e=>{e.preventDefault();onNav(page)}} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{color:'#FFF',position:'relative',paddingBottom:mobile?0:2,display:'block',padding:mobile?'16px 0':'0 0 2px 0',cursor:'pointer'}}>
+      <span style={{position:'relative',zIndex:1,fontSize:mobile?28:11,letterSpacing:mobile?'.08em':'.22em'}}>{label}</span>
+      {!mobile&&<span style={{position:'absolute',bottom:0,left:0,width:'100%',height:1,background:'#FFF',transformOrigin:'left',transform:(h||active)?'scaleX(1)':'scaleX(0)',transition:'transform .3s cubic-bezier(.2,.8,.2,1)'}}/>}
+    </a>
+  );
+};
+
+const HUD=({page,onNav})=>{
+  const red=useReducedMotion();
+  const[mobOpen,setMobOpen]=useState(false);
+  useEffect(()=>{if(mobOpen)document.body.style.overflow='hidden';else document.body.style.overflow='';return()=>{document.body.style.overflow=''}},[mobOpen]);
+  return(
+    <React.Fragment>
+      <nav style={{position:'fixed',top:0,left:0,right:0,zIndex:100,mixBlendMode:'difference',pointerEvents:'none',padding:'20px 32px',display:'flex',justifyContent:'space-between',alignItems:'center',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="#" onClick={e=>{e.preventDefault();onNav('home')}} style={{pointerEvents:'auto',display:'inline-flex',alignItems:'center',gap:12,color:'#FFF',cursor:'pointer'}}>
+          <TB size={14} color="#FFF" gap={3}/><span className="hide-mobile">White Label Resell</span>
+        </a>
+        <span className="nav-desktop" style={{pointerEvents:'auto',display:'flex',gap:28}}>
+          <NL label="Home" page="home" active={page==='home'} onNav={onNav}/>
+          <NL label="Work" page="work" active={page==='work'} onNav={onNav}/>
+          <NL label="About" page="about" active={page==='about'} onNav={onNav}/>
+          <NL label="Team" page="team" active={page==='team'} onNav={onNav}/>
+          <NL label="Get a Quote" page="contact" active={page==='contact'} onNav={onNav}/>
+        </span>
+        <button className="nav-mob-toggle" onClick={()=>setMobOpen(o=>!o)} style={{pointerEvents:'auto',background:'none',border:'none',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',cursor:'pointer',display:'none',padding:0}}>
+          {mobOpen?'CLOSE':'MENU'}
+        </button>
+      </nav>
+      {mobOpen&&<div className="nav-mob-overlay" style={{position:'fixed',inset:0,zIndex:99,background:'#000',display:'flex',flexDirection:'column',justifyContent:'center',padding:'80px 48px'}}>
+        <NL label="Home" page="home" mobile onNav={p=>{setMobOpen(false);onNav(p)}}/>
+        <NL label="Work" page="work" mobile onNav={p=>{setMobOpen(false);onNav(p)}}/>
+        <NL label="About" page="about" mobile onNav={p=>{setMobOpen(false);onNav(p)}}/>
+        <NL label="Team" page="team" mobile onNav={p=>{setMobOpen(false);onNav(p)}}/>
+        <NL label="Get a Quote" page="contact" mobile onNav={p=>{setMobOpen(false);onNav(p)}}/>
+      </div>}
+      <style>{`
+        .hide-mobile{display:inline}
+        .nav-mob-toggle{display:none!important}
+        .nav-desktop{display:flex!important}
+        @media(max-width:768px){.hide-mobile{display:none}.nav-mob-toggle{display:block!important}.nav-desktop{display:none!important}}
+      `}</style>
+    </React.Fragment>
+  );
+};
+
+/* ═══ FOOTER ═══ */
+const Footer=({onNav})=>(
+  <footer style={{background:'#000',color:'#FFF',borderTop:'1px solid #FFF',padding:'44px 6vw 32px'}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:28}}>
+      <div>
+        <TB size={20} color="#FFF" gap={3}/>
+        <div style={{marginTop:14,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5}}>© 2026 White Label Resell · est. 2018</div>
+      </div>
+      <div style={{display:'flex',gap:22,flexWrap:'wrap',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="#" onClick={e=>{e.preventDefault();onNav('home')}} style={{opacity:.8}}>Home</a>
+        <a href="#" onClick={e=>{e.preventDefault();onNav('work')}} style={{opacity:.8}}>Work</a>
+        <a href="#" onClick={e=>{e.preventDefault();onNav('about')}} style={{opacity:.8}}>About</a>
+        <a href="#" onClick={e=>{e.preventDefault();onNav('team')}} style={{opacity:.8}}>Team</a>
+        <a href="#" onClick={e=>{e.preventDefault();onNav('contact')}} style={{opacity:.8}}>Get a Quote</a>
+        <a href="mailto:partners@whitelabelresell.com" style={{opacity:.8}}>partners@whitelabelresell.com</a>
+      </div>
+    </div>
+  </footer>
+);
+
+
+/* ╔════════════════════════════════════════════════════════════╗
+   ║  PAGE: HOME                                              ║
+   ╚════════════════════════════════════════════════════════════╝ */
+
+const HomeHero=()=>{
+  const red=useReducedMotion();
+  const sRef=useRef(null);
+  const e=useRef({});
+  const[phase,setPhase]=useState(red?4:0);
+  const[hbar,setHbar]=useState(false);
+  const[pct,setPct]=useState('000%');
+  useEffect(()=>{if(red){setPhase(4);return}const timers=[setTimeout(()=>setPhase(1),200),setTimeout(()=>setPhase(2),750),setTimeout(()=>setPhase(3),1350),setTimeout(()=>setPhase(4),2100),setTimeout(()=>setHbar(true),2400)];return()=>timers.forEach(clearTimeout)},[red]);
+  useEffect(()=>{const sec=sRef.current;if(!sec)return;let r=0,tr=0;const u=()=>{r=0;const rc=sec.getBoundingClientRect(),vh=window.innerHeight;const p=Math.max(0,Math.min(1,-rc.top/vh));const el=e.current;if(p>.01&&el.b0){el.b0.style.transform=`translateY(${p*-35}px)`}if(p>.01&&el.b1){el.b1.style.transform=`translateY(${p*-70}px)`}if(p>.01&&el.b2){el.b2.style.transform=`translateY(${p*-18}px)`}if(p>.01&&el.hd)el.hd.style.transform=`translateY(${p*-28}px)`;if(p>.01&&el.pa){el.pa.style.transform=`translateY(${p*14}px)`;el.pa.style.opacity=Math.max(0,1-p*3)}if(p>.01&&el.mt)el.mt.style.transform=`translateY(${p*18}px)`;if(p>.01&&el.sc)el.sc.style.transform=`translateY(${p*22}px)`;if(el.inv){const ip=Math.max(0,Math.min(1,(p-.4)/.5));el.inv.style.clipPath=`inset(${(1-ip)*100}% 0 0 0)`;el.inv.style.opacity=ip}setPct(String(Math.round(p*100)).padStart(3,'0')+'%')};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red]);
+  const barHover=(i)=>{if(red)return;const el=e.current;if(i===0&&el.b0)el.b0.style.height='72%';if(i===1&&el.b1)el.b1.style.height='92%';if(i===2&&el.b2)el.b2.style.height='80%'};
+  const barLeave=()=>{if(red)return;const el=e.current;if(el.b0)el.b0.style.height='68%';if(el.b1)el.b1.style.height='88%';if(el.b2)el.b2.style.height='76%'};
+  const ease='cubic-bezier(.16,1,.3,1)';const easeMed='cubic-bezier(.2,.8,.2,1)';
+  return(
+    <section ref={sRef} style={{height:'200vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden'}}>
+      <div style={{position:'absolute',top:0,left:'42vw',width:1,height:'100vh',background:'rgba(255,255,255,.08)',transformOrigin:'top',transform:red?'scaleY(1)':(phase>=1?'scaleY(1)':'scaleY(0)'),transition:red?'none':'transform .4s '+ease+' .05s'}}/>
+      <div style={{position:'absolute',top:0,left:0,bottom:0,width:'42vw',display:'flex',alignItems:'flex-end',gap:'clamp(16px,2.8vw,40px)',padding:'0 6vw 8vh',pointerEvents:'none',zIndex:1}}>
+        <div ref={n=>{if(n)e.current.b0=n}} onMouseEnter={()=>barHover(0)} onMouseLeave={barLeave} style={{pointerEvents:'auto',cursor:'default',width:'clamp(56px,7.5vw,120px)',height:red?'68%':(phase>=1?'68%':'0%'),background:'#FFF',transformOrigin:'bottom',transform:red?'none':(phase>=1?'translateY(0)':'translateY(100%)'),transition:red?'none':`transform .55s ${ease} .25s, height .5s ${easeMed}`,willChange:phase>=4?'transform':'auto'}}/>
+        <div ref={n=>{if(n)e.current.b1=n}} onMouseEnter={()=>barHover(1)} onMouseLeave={barLeave} style={{pointerEvents:'auto',cursor:'default',width:'clamp(56px,7.5vw,120px)',height:red?'88%':(phase>=1?'88%':'0%'),background:'#FFF',transformOrigin:'top',transform:red?'none':(phase>=1?'translateY(0)':'translateY(-100%)'),transition:red?'none':`transform .58s ${ease} .30s, height .5s ${easeMed}`,willChange:phase>=4?'transform':'auto'}}/>
+        <div ref={n=>{if(n)e.current.b2=n}} onMouseEnter={()=>barHover(2)} onMouseLeave={barLeave} style={{pointerEvents:'auto',cursor:'default',width:'clamp(56px,7.5vw,120px)',height:red?'76%':(phase>=1?'76%':'0%'),background:'#FFF',transformOrigin:'bottom',transform:red?'none':(phase>=1?'translateY(0)':'translateY(100%)'),transition:red?'none':`transform .62s ${ease} .35s, height .5s ${easeMed}`,willChange:phase>=4?'transform':'auto'}}/>
+      </div>
+      <div style={{position:'absolute',top:0,right:0,bottom:0,width:'56vw',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 6vw 0 4vw',zIndex:2}}>
+        <div ref={n=>{if(n)e.current.mt=n}} style={{willChange:'transform',marginBottom:'clamp(12px,1.5vw,24px)',opacity:red?1:(phase>=3?1:0),transform:red?'none':(phase>=3?'translateY(0)':'translateY(12px)'),transition:red?'none':'opacity .3s ease, transform .3s '+easeMed}}>
+          <K style={{opacity:.5}}>White-label production · est. 2018</K>
+        </div>
+        <h1 style={{margin:0,lineHeight:'-.04em'}}>
+          <span ref={n=>{if(n)e.current.hd=n}} style={{display:'block',fontFamily:'Geist',fontSize:'clamp(52px,7.5vw,128px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:.96,willChange:'transform',clipPath:red?'inset(0 0 0% 0)':(phase>=2?'inset(0 0 0% 0)':'inset(0 0 100% 0)'),transition:red?'none':'clip-path .5s '+ease+' .45s'}}>Your clients see you.</span>
+          <span style={{display:'block',fontFamily:'Geist',fontSize:'clamp(52px,7.5vw,128px)',fontWeight:300,fontStyle:'italic',letterSpacing:'-.045em',lineHeight:.96,clipPath:red?'inset(0 0 0% 0)':(phase>=3?'inset(0 0 0% 0)':'inset(0 0 100% 0)'),transition:red?'none':'clip-path .55s '+ease+' .85s'}}>We do the work.</span>
+        </h1>
+        <p ref={n=>{if(n)e.current.pa=n}} style={{margin:'clamp(18px,2.5vw,32px) 0 0',maxWidth:480,fontSize:'clamp(14px,1.15vw,17px)',lineHeight:1.65,opacity:red?(phase>=3?1:0):(phase>=3?1:0),transform:red?'none':(phase>=3?'translateY(0)':'translateY(12px)'),transition:red?'none':'opacity .35s ease, transform .35s '+easeMed}}>
+          SEO, content, web development, paid media and analytics — built and shipped under your agency's brand. You keep the client, the credit and the margin.
+        </p>
+        <div ref={n=>{if(n)e.current.ct=n}} style={{display:'flex',gap:12,flexWrap:'wrap',marginTop:'clamp(24px,3vw,44px)',opacity:red?(phase>=4?1:0):(phase>=4?1:0),transform:red?'none':(phase>=4?'translateY(0)':'translateY(14px)'),transition:red?'none':'opacity .35s ease, transform .35s '+easeMed,mixBlendMode:'difference',zIndex:4,position:'relative'}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:12,padding:'16px 24px',background:'#FFF',color:'#000',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',fontWeight:600,cursor:'pointer'}}><TB size={11} color="#000"/>Get a quote</span>
+          <span style={{display:'inline-flex',alignItems:'center',padding:'16px 24px',border:'1px solid rgba(255,255,255,.4)',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',cursor:'pointer'}}>See the work →</span>
+        </div>
+      </div>
+      <div ref={n=>{if(n)e.current.sc=n}} style={{position:'absolute',bottom:'clamp(28px,4vh,48px)',left:32,display:'flex',alignItems:'center',gap:14,zIndex:6,pointerEvents:'none',opacity:red?1:0,mixBlendMode:'difference'}}>
+        <span style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4}}>/01 · scroll</span>
+        <div style={{width:32,height:1,background:'rgba(255,255,255,.2)',position:'relative',overflow:'hidden'}}>
+          <div style={{position:'absolute',top:0,left:0,height:'100%',width:'100%',background:'#FFF',transformOrigin:'left',transform:red?'scaleX(1)':(hbar?'scaleX(1)':'scaleX(0)'),transition:red?'none':'transform 1.2s cubic-bezier(.2,.8,.2,1)'}}/>
+        </div>
+      </div>
+      <div style={{position:'absolute',bottom:'clamp(28px,4vh,48px)',right:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3,zIndex:6,pointerEvents:'none',mixBlendMode:'difference'}}>{pct}</div>
+      <div style={{position:'absolute',top:'clamp(80px,10vh,120px)',right:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.2,zIndex:6,pointerEvents:'none',mixBlendMode:'difference'}}>01 / HOME</div>
+      <div ref={n=>{if(n)e.current.inv=n}} style={{position:'absolute',inset:0,background:'#FFF',color:'#000',zIndex:3,clipPath:'inset(100% 0 0 0)',opacity:0,pointerEvents:'none'}}>
+        <div style={{position:'absolute',top:0,left:0,bottom:0,width:'42vw',display:'flex',alignItems:'flex-end',gap:'clamp(16px,2.8vw,40px)',padding:'0 6vw 8vh',pointerEvents:'none'}}>{[.68,.88,.76].map((h,i)=>(<div key={i} style={{width:'clamp(56px,7.5vw,120px)',height:`${h*100}%`,background:'#000'}}/>))}</div>
+        <div style={{position:'absolute',top:0,right:0,bottom:0,width:'56vw',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 6vw 0 4vw'}}>
+          <K style={{opacity:.5,color:'#000'}}>White-label production · est. 2018</K>
+          <h1 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(52px,7.5vw,128px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:.96,color:'#000'}}>Your clients see you.<br/><i style={{fontWeight:300}}>We do the work.</i></h1>
+          <p style={{margin:'clamp(18px,2.5vw,32px) 0 0',maxWidth:480,fontSize:'clamp(14px,1.15vw,17px)',lineHeight:1.65,opacity:.7,color:'#000'}}>SEO, content, web development, paid media and analytics — built and shipped under your agency's brand. You keep the client, the credit and the margin.</p>
+        </div>
+      </div>
+      </div>
+    </section>
+  );
+};
+
+const HomeSellDeliver=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);const e=useRef({});
+  useEffect(()=>{const s=sec.current;if(!s)return;let r=0,tr=0,lastFlip=null;const u=()=>{r=0;const rc=s.getBoundingClientRect(),vh=window.innerHeight,sp=rc.height-vh;if(sp<=0)return;const p=Math.max(0,Math.min(1,-rc.top/sp));if(red)return;const{b0,b1,b2,hd,pc,fr}=e.current;if(b0){const w=Math.max(0,Math.min(1,(p-.08)/.35));b0.style.transform=`scaleX(${w})`}if(b1){const w=Math.max(0,Math.min(1,(p-.14)/.35));b1.style.transform=`scaleX(${w})`}if(b2){const w=Math.max(0,Math.min(1,(p-.20)/.35));b2.style.transform=`scaleX(${w})`}if(pc)pc.textContent=String(Math.round(p*100)).padStart(3,'0')+'%';const flip=p>.5;if(flip!==lastFlip){lastFlip=flip;if(hd){hd.style.transition='none';hd.style.opacity='0';hd.style.transform=flip?'translateY(30px)':'translateY(-30px)';requestAnimationFrame(()=>{requestAnimationFrame(()=>{hd.textContent=flip?'We deliver.':'You sell.';hd.style.transition='opacity .4s ease,transform .4s cubic-bezier(.2,.8,.2,1)';hd.style.opacity='1';hd.style.transform='translateY(0)'})});}}if(fr)fr.style.opacity=p>.05?1:0};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red]);
+  return(
+    <section ref={sec} style={{height:'280vh',position:'relative',borderTop:'1px solid #FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',background:'#000',color:'#FFF'}}>
+        <div style={{position:'absolute',inset:0,pointerEvents:'none'}}>
+          <div ref={n=>{if(n)e.current.b0=n}} style={{position:'absolute',left:0,right:0,top:'18%',height:'12%',background:'#FFF',transformOrigin:'left center',transform:'scaleX(0)',willChange:'transform',mixBlendMode:'difference'}}/>
+          <div ref={n=>{if(n)e.current.b1=n}} style={{position:'absolute',left:0,right:0,top:'41%',height:'12%',background:'#FFF',transformOrigin:'right center',transform:'scaleX(0)',willChange:'transform',mixBlendMode:'difference'}}/>
+          <div ref={n=>{if(n)e.current.b2=n}} style={{position:'absolute',left:0,right:0,top:'64%',height:'12%',background:'#FFF',transformOrigin:'left center',transform:'scaleX(0)',willChange:'transform',mixBlendMode:'difference'}}/>
+        </div>
+        <div ref={n=>{if(n)e.current.fr=n}} style={{position:'absolute',top:90,left:32,right:32,display:'flex',justifyContent:'space-between',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:0,mixBlendMode:'difference',color:'#FFF'}}>
+          <span>The partnership, in two words</span><span ref={n=>{if(n)e.current.pc=n}}>000%</span>
+        </div>
+        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none',mixBlendMode:'difference'}}>
+          <h2 ref={n=>{if(n)e.current.hd=n}} style={{margin:0,textAlign:'center',fontFamily:'Geist',fontSize:'clamp(64px,14vw,200px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:1.08}}>You sell.</h2>
+        </div>
+        <p style={{position:'absolute',bottom:90,left:32,right:32,margin:0,maxWidth:620,fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.6,opacity:.7,mixBlendMode:'difference'}}>You own the relationship, the pitch and the invoice. We run production behind the scenes — on your templates, in your voice, to your deadlines. Your clients never learn our name, and that is the entire point.</p>
+      </div>
+    </section>
+  );
+};
+
+const HomePositioning=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);const el=useRef({});const[inv,setInv]=useState(false);
+  useEffect(()=>{if(!red)return;const e=el.current;if(e.b0)e.b0.style.transform='scaleY(2.5)';if(e.b1)e.b1.style.transform='scaleY(2.7)';if(e.b2)e.b2.style.transform='scaleY(3)';if(e.cap){e.cap.style.transform='translateY(0)';e.cap.style.opacity='1'}if(e.zero)e.zero.style.opacity='1';if(e.hRule){e.hRule.style.transform='scaleX(1)';e.hRule.style.opacity='1'}if(e.cbar)e.cbar.style.transform='scaleX(1)';if(e.bench){e.bench.style.opacity='1';e.bench.style.transform='translateY(-40%)'}if(e.r1)e.r1.style.opacity='1';if(e.r2)e.r2.style.opacity='1';if(e.r3)e.r3.style.opacity='1';setInv(true)},[red]);
+  useEffect(()=>{const s=sec.current;if(!s)return;let r=0,tr=0;const u=()=>{r=0;const rc=s.getBoundingClientRect(),vh=window.innerHeight,sp=rc.height-vh;if(sp<=0)return;const p=Math.max(0,Math.min(1,-rc.top/sp));const e=el.current;if(red)return;if(e.b0){const s=1+(p/.45)*1.5;e.b0.style.transform=`scaleY(${Math.min(s,2.5)})`}if(e.b1){const s=1+(p/.45)*1.7;e.b1.style.transform=`scaleY(${Math.min(s,2.7)})`}if(e.b2){const s=1+(p/.45)*2;e.b2.style.transform=`scaleY(${Math.min(s,3)})`}if(e.cap){const y=p<.4?-(p/.4)*12:-(1)*12;const op=p<.35?1:Math.max(0,1-(p-.35)/.1);e.cap.style.transform=`translateY(${y}px)`;e.cap.style.opacity=op}if(e.zero){const fi=p<.1?0:Math.min(1,(p-.1)/.08);const fo=p<.35?1:Math.max(0,1-(p-.35)/.1);e.zero.style.opacity=Math.min(fi,fo)}if(e.hRule){const sc=p<.2?0:Math.min(1,(p-.2)/.25);const op=p<.4?1:Math.max(0,1-(p-.4)/.08);e.hRule.style.transform=`scaleX(${sc})`;e.hRule.style.opacity=op}if(e.cbar){const ep=Math.max(0,Math.min(1,(p-.45)/.06));e.cbar.style.transform=`scaleX(${ep})`;if(p>.50&&!inv)setInv(true);if(p<.45&&inv)setInv(false)}const bc=inv?'#000':'#FFF';if(e.b0)e.b0.style.background=bc;if(e.b1)e.b1.style.background=bc;if(e.b2)e.b2.style.background=bc;if(e.bench){const op=p<.55?0:Math.min(1,(p-.55)/.06);const y=p<.55?-20:0;e.bench.style.opacity=op;e.bench.style.transform=`translateY(calc(-40% + ${y}px))`}if(e.r1){e.r1.style.opacity=p<.65?0:Math.min(1,(p-.65)/.05)}if(e.r2){e.r2.style.opacity=p<.72?0:Math.min(1,(p-.72)/.05)}if(e.r3){e.r3.style.opacity=p<.79?0:Math.min(1,(p-.79)/.05)}};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red,inv]);
+  const ease='cubic-bezier(.16,1,.3,1)';const fg=inv?'#000':'#FFF';const bg=inv?'#FFF':'#000';
+  return(
+    <section ref={sec} style={{height:'140vh',position:'relative',background:bg,color:fg,transition:inv?'background .01s':'none'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4,zIndex:10}}>03 / WHY AGENCIES PARTNER WITH US</div>
+        <div style={{position:'absolute',right:'8vw',top:'10vh',bottom:'10vh',width:'clamp(180px,22vw,320px)',display:'flex',gap:'clamp(10px,1.6vw,22px)',alignItems:'flex-end',pointerEvents:'none',zIndex:3}}>
+          <div ref={n=>{if(n)el.current.b0=n}} style={{flex:1,height:'40%',background:fg,transformOrigin:'bottom',willChange:'transform'}}/>
+          <div ref={n=>{if(n)el.current.b1=n}} style={{flex:1,height:'30%',background:fg,transformOrigin:'bottom',willChange:'transform'}}/>
+          <div ref={n=>{if(n)el.current.b2=n}} style={{flex:1,height:'20%',background:fg,transformOrigin:'bottom',willChange:'transform'}}/>
+        </div>
+        <div ref={n=>{if(n)el.current.cbar=n}} style={{position:'absolute',right:'calc(8vw + clamp(90px,11vw,160px) + clamp(5px,.8vw,11px))',top:0,width:3,height:'100vh',background:fg,transformOrigin:'right center',transform:'scaleX(0)',willChange:'transform',zIndex:5}}/>
+        <div ref={n=>{if(n)el.current.cap=n}} style={{position:'absolute',left:'6vw',top:'50%',transform:'translateY(-50%)',zIndex:2,willChange:'transform'}}>
+          <div style={{fontFamily:'Geist',fontSize:'clamp(64px,11vw,170px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.88}}>MORE<br/>CAPACITY.</div>
+          <div ref={n=>{if(n)el.current.zero=n}} style={{fontFamily:'Geist',fontSize:'clamp(22px,3vw,42px)',fontWeight:300,letterSpacing:'-.03em',lineHeight:1.1,marginTop:'clamp(16px,2vw,32px)',opacity:0,willChange:'opacity',color:fg}}>ZERO<br/>HEADCOUNT.</div>
+        </div>
+        <div style={{position:'absolute',left:'6vw',bottom:'18vh',right:'8vw',height:1,background:`rgba(${inv?'0,0,0':'255,255,255'},.12)`,zIndex:2}}>
+          <div ref={n=>{if(n)el.current.hRule=n}} style={{height:'100%',background:fg,transformOrigin:'left',transform:'scaleX(0)'}}/>
+        </div>
+        <div ref={n=>{if(n)el.current.bench=n}} style={{position:'absolute',left:'6vw',top:'50%',transform:'translateY(-40%)',opacity:0,willChange:'opacity,transform',zIndex:2}}>
+          <div style={{fontFamily:'Geist',fontSize:'clamp(36px,6vw,90px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.92,marginBottom:'clamp(24px,3vw,48px)'}}>THE BENCH<br/>BEHIND<br/>YOUR AGENCY.</div>
+          <div style={{display:'flex',flexDirection:'column',gap:'clamp(16px,2vw,28px)',maxWidth:640}}>
+            <div ref={n=>{if(n)el.current.r1=n}} style={{opacity:0}}><div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:6}}>01 / CAPACITY WITHOUT HEADCOUNT</div><div style={{fontFamily:'Geist',fontSize:'clamp(13px,1.1vw,15px)',lineHeight:1.6,opacity:.65}}>Add SEO, content, development or analytics without recruiting, salaries or bench risk.</div></div>
+            <div ref={n=>{if(n)el.current.r2=n}} style={{opacity:0}}><div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:6}}>02 / DELIVERED UNDER YOUR BRAND</div><div style={{fontFamily:'Geist',fontSize:'clamp(13px,1.1vw,15px)',lineHeight:1.6,opacity:.65}}>Reports, decks, builds and dashboards ship in your identity. Mutual NDAs are standard.</div></div>
+            <div ref={n=>{if(n)el.current.r3=n}} style={{opacity:0}}><div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:6}}>03 / BUILT ON RESULTS</div><div style={{fontFamily:'Geist',fontSize:'clamp(13px,1.1vw,15px)',lineHeight:1.6,opacity:.65}}>Every engagement is measured in leads, rankings and revenue your client can see.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const HomeFinalCTA=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});const[hov1,setHov1]=useState(false);const[hovBtn,setHovBtn]=useState(false);const invert=hovBtn;
+  useEffect(()=>{if(red)return;const s=sec.current;if(!s)return;let r=0,tr=0;const u=()=>{r=0;const rc=s.getBoundingClientRect(),vh=window.innerHeight;const p=viewportProgress(rc,vh);const e=el.current;if(e.hl)e.hl.style.transform=`translateY(${lerp(50,0,p)}px)`;if(e.sub)e.sub.style.transform=`translateY(${lerp(20,0,p)}px)`;if(e.btns)e.btns.style.transform=`translateY(${lerp(20,0,p)}px)`;const sep=range(p,.15,.4);if(e.b0)e.b0.style.transform=`translateX(${sep*-30}px) translateY(${lerp(-30,0,p)}px)`;if(e.b1)e.b1.style.transform=`translateY(${lerp(-30,0,p)}px)`;if(e.b2)e.b2.style.transform=`translateX(${sep*30}px) translateY(${lerp(-30,0,p)}px)`};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red]);
+  return(
+    <section ref={sec} style={{minHeight:'100vh',background:invert?'#FFF':'#000',color:invert?'#000':'#FFF',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',padding:'80px 6vw',position:'relative',borderTop:`1px solid ${invert?'#000':'#FFF'}`,overflow:'hidden',transition:'background .5s cubic-bezier(.2,.8,.2,1), color .5s cubic-bezier(.2,.8,.2,1)'}}>
+      <div style={{display:'flex',gap:8,alignItems:'flex-end',height:64,marginBottom:40}}>
+        {[0,1,2].map(i=>(<div key={i} ref={n=>{if(n)el.current[`b${i}`]=n}} style={{width:10,height:64,background:invert?'#000':'#FFF',willChange:'transform',transition:'background .5s cubic-bezier(.2,.8,.2,1)'}}/>))}
+      </div>
+      <div ref={n=>{if(n)el.current.hl=n}} style={{textAlign:'center',willChange:'transform'}}>
+        <h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(40px,7vw,110px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:1.02}}>YOUR CLIENTS<br/>DON'T NEED<br/>ANOTHER VENDOR.</h2>
+      </div>
+      <p ref={n=>{if(n)el.current.sub=n}} style={{marginTop:24,fontFamily:'Geist',fontSize:'clamp(16px,1.5vw,22px)',fontWeight:300,fontStyle:'italic',opacity:.5,willChange:'transform'}}>You might.</p>
+      <div ref={n=>{if(n)el.current.btns=n}} style={{display:'flex',gap:20,marginTop:48,flexWrap:'wrap',justifyContent:'center',willChange:'transform'}}>
+        <a href="#" onMouseEnter={()=>{setHov1(true);setHovBtn(true)}} onMouseLeave={()=>{setHov1(false);setHovBtn(false)}} style={{padding:'20px 36px',border:hov1?`1px solid ${invert?'#FFF':'#000'}`:`1px solid ${invert?'#000':'#FFF'}`,background:hov1?(invert?'#000':'#FFF'):'transparent',color:hov1?(invert?'#FFF':'#000'):'currentColor',fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:'.22em',textTransform:'uppercase',fontWeight:600,transition:'all .4s cubic-bezier(.2,.8,.2,1)',display:'inline-flex',alignItems:'center',gap:12}}><TB size={14} color="currentColor"/>GET A QUOTE →</a>
+      </div>
+    </section>
+  );
+};
+
+const HomePage=({onNav})=>(
+  <React.Fragment>
+    <HomeHero/>
+    <HomeSellDeliver/>
+    <HomePositioning/>
+    <HomeFinalCTA/>
+    <Footer onNav={onNav}/>
+  </React.Fragment>
+);
+
+
+/* ╔════════════════════════════════════════════════════════════╗
+   ║  PAGE: ABOUT                                             ║
+   ╚════════════════════════════════════════════════════════════╝ */
+
+const AboutHero=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});const[phase,setPhase]=useState(red?5:0);
+  useEffect(()=>{if(red){setPhase(5);return}const timers=[setTimeout(()=>setPhase(1),0),setTimeout(()=>setPhase(2),120),setTimeout(()=>setPhase(3),280),setTimeout(()=>setPhase(4),480),setTimeout(()=>setPhase(5),750)];return()=>timers.forEach(clearTimeout)},[red]);
+  useEffect(()=>{if(red)return;const s=sec.current;if(!s)return;let r=0,tr=0;const u=()=>{r=0;const rc=s.getBoundingClientRect(),vh=window.innerHeight;const p=stickyProgress(rc,vh);const e=el.current;if(e.hl)e.hl.style.transform=`translateY(${p*-50}px)`;if(e.cp){e.cp.style.transform=`translateY(${p*20}px)`;e.cp.style.opacity=Math.max(0,1-p*3)}if(e.bg)e.bg.style.transform=`translateY(calc(-50% + ${p*40}px))`};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red]);
+  return(
+    <section ref={sec} style={{height:'180vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',justifyContent:'center',padding:'clamp(100px,14vh,160px) 6vw clamp(60px,8vh,100px)'}}>
+        <div ref={n=>{if(n)el.current.bg=n}} style={{position:'absolute',top:'50%',left:'6vw',fontFamily:'Geist',fontSize:'clamp(120px,18vw,280px)',fontWeight:700,letterSpacing:'-.06em',lineHeight:.82,opacity:.04,whiteSpace:'nowrap',pointerEvents:'none',zIndex:0,willChange:'transform'}}>ABOUT</div>
+        <div style={{position:'absolute',top:'50%',right:'12vw',transform:'translateY(-50%)',zIndex:3}}>
+          <div style={{display:'flex',gap:8,alignItems:'flex-end',height:64}}>
+            {[0,1,2].map(i=>{const ratios=[.66,1,.82];const enters=['100%','-100%','100%'];return(<div key={i} style={{width:10,transformOrigin:'bottom',willChange:'transform',transform:phase>=2?'translateY(0)':'translateY('+enters[i]+')',transition:red?'none':`transform .7s ${EASE} ${i*80+120}ms`}}><div style={{width:10,height:64,background:'#FFF',transformOrigin:'bottom',transform:`scaleY(${ratios[i]})`}}/></div>)})}
+          </div>
+        </div>
+        <div ref={n=>{if(n)el.current.hl=n}} style={{position:'relative',zIndex:2,willChange:'transform'}}>
+          {['THE TEAM','BEHIND','THE TEAM.'].map((txt,i)=>(<div key={i} style={{overflow:'hidden'}}><h1 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(70px,12vw,190px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.88,transform:phase>=3?'translateY(0)':'translateY(100%)',transition:red?'none':`transform .6s ${EASE} ${i*100}ms`}}>{txt}</h1></div>))}
+        </div>
+        <div ref={n=>{if(n)el.current.cp=n}} style={{position:'absolute',bottom:'clamp(40px,6vh,80px)',right:'6vw',maxWidth:380,zIndex:2,willChange:'transform,opacity',opacity:phase>=4?1:0,transition:red?'none':'opacity .5s ease'}}>
+          <p style={{margin:0,fontFamily:'Geist',fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.6,opacity:.65}}>White Label Resell is the production bench behind agencies. We produce the work. You own the relationship.</p>
+        </div>
+        <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3,zIndex:2}}>01</div>
+      </div>
+    </section>
+  );
+};
+
+const AboutPurpose=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});
+  useEffect(()=>{if(red)return;const s=sec.current;if(!s)return;let r=0,tr=0;const u=()=>{r=0;const rc=s.getBoundingClientRect(),vh=window.innerHeight;const p=stickyProgress(rc,vh);const e=el.current;if(e.ya){const op=range(p,0,.15);e.ya.style.transform=`translateX(${lerp(-40,0,op)}px)`;e.ya.style.opacity=op}if(e.ob){const op=range(p,0,.15);e.ob.style.transform=`translateX(${lerp(40,0,op)}px)`;e.ob.style.opacity=op}if(e.tb){e.tb.style.transform=`scaleY(${range(p,.15,.35)})`}if(e.line){e.line.style.transform=`scaleX(${range(p,.2,.4)})`}if(e.ml)e.ml.style.opacity=range(p,.35,.5);if(e.mr)e.mr.style.opacity=range(p,.35,.5);if(e.desc)e.desc.style.opacity=range(p,.5,.65);if(p>.82){e.wrap.style.opacity=1-range(p,.82,1)*.6}else{e.wrap.style.opacity=1}};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red]);
+  return(
+    <section ref={sec} style={{height:'200vh',position:'relative',background:'#FFF',color:'#000'}}>
+      <div ref={n=>{if(n)el.current.wrap=n}} style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 6vw',borderTop:'1px solid #000'}}>
+        <K s={red?{opacity:.5}:{}}>02 / Our purpose</K>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'clamp(20px,4vw,60px)',marginBottom:'clamp(24px,3vh,40px)',position:'relative',flexWrap:'wrap'}}>
+          <div ref={n=>{if(n)el.current.ya=n}} style={{fontFamily:'Geist',fontSize:'clamp(48px,8vw,120px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.9,opacity:red?1:0,willChange:'transform'}}>YOUR<br/>AGENCY.</div>
+          <div style={{position:'relative',display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+            <div ref={n=>{if(n)el.current.tb=n}} style={{display:'flex',gap:4,alignItems:'flex-end',height:60,transformOrigin:'bottom',transform:red?'scaleY(1)':'scaleY(0)',willChange:'transform'}}>{[.66,1,.82].map((h,i)=><span key={i} style={{width:8,height:`${h*100}%`,background:'#000'}}/>)}</div>
+            <div ref={n=>{if(n)el.current.line=n}} style={{width:'clamp(60px,10vw,140px)',height:1,background:'#000',transformOrigin:'center',transform:red?'scaleX(1)':'scaleX(0)'}}/>
+          </div>
+          <div ref={n=>{if(n)el.current.ob=n}} style={{fontFamily:'Geist',fontSize:'clamp(48px,8vw,120px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.9,opacity:red?1:0,willChange:'transform'}}>OUR<br/>BENCH.</div>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',maxWidth:600,marginBottom:'clamp(20px,3vh,40px)'}}>
+          <div ref={n=>{if(n)el.current.ml=n}} style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:red?.5:0}}>CLIENT-FACING</div>
+          <div ref={n=>{if(n)el.current.mr=n}} style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:red?.5:0}}>PRODUCTION</div>
+        </div>
+        <div ref={n=>{if(n)el.current.desc=n}} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:'clamp(24px,3vw,48px)',maxWidth:900,opacity:red?.7:0}}>
+          <p style={{margin:0,fontSize:'clamp(15px,1.2vw,18px)',lineHeight:1.65,opacity:.7}}>You win the client. You own the pitch, the relationship, and the invoice. We run production behind the scenes — on your templates, in your voice, to your deadlines.</p>
+          <p style={{margin:0,fontSize:'clamp(15px,1.2vw,18px)',lineHeight:1.65,opacity:.7}}>Your clients never learn our name, and that is the entire point. Every report, every build, every dashboard ships under your brand.</p>
+        </div>
+        <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3}}>02</div>
+      </div>
+    </section>
+  );
+};
+
+const AboutJourney=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});
+  useEffect(()=>{if(red)return;const s=sec.current;if(!s)return;let r=0,tr=0;const u=()=>{r=0;const rc=s.getBoundingClientRect(),vh=window.innerHeight;const p=viewportProgress(rc,vh);const e=el.current;if(e.line){e.line.style.transform=`scaleX(${range(p,0,.6)})`}if(e.bar){const markerP=clamp01(p/.6);e.bar.style.left=`${markerP*100}%`;e.bar.style.opacity=markerP>0?1:0}const thresholds=[.1,.3,.5];for(let i=0;i<3;i++){if(e[`m${i}`]){const op=range(p,thresholds[i],thresholds[i]+.15);e[`m${i}`].style.opacity=op;e[`m1${i}`].style.transform=`translateY(${op<1?lerp(30,0,op):0}px)`}}parallaxData.forEach(({el:key,start,end})=>{if(e[key]){e[key].style.transform=`translateX(${lerp(start,end,p)}px)`}})};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red]);
+  const parallaxData=[{el:'t0',start:-20,end:10},{el:'t1',start:30,end:-10},{el:'t2',start:-40,end:20}];
+  const milestones=[['01','THE WORK','Started by doing the work — SEO, content, builds.'],['02','THE SYSTEM','Built systems to scale production without hiring.'],['03','THE BENCH','Became the bench behind agencies everywhere.']];
+  return(
+    <section ref={sec} style={{background:'#000',color:'#FFF',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #FFF',position:'relative',minHeight:'120vh'}}>
+      <K>03 / Our journey</K>
+      <h2 style={{margin:'0 0 clamp(48px,6vh,80px)',fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>WHAT'S STAYED<br/><span style={{fontWeight:300}}>THE SAME.</span></h2>
+      <div style={{position:'relative',height:1,background:'rgba(255,255,255,.12)',marginBottom:'clamp(48px,6vh,80px)'}}>
+        <div ref={n=>{if(n)el.current.line=n}} style={{position:'absolute',inset:0,background:'#FFF',transformOrigin:'left',transform:red?'scaleX(1)':'scaleX(0)'}}/>
+        <div ref={n=>{if(n)el.current.bar=n}} style={{position:'absolute',top:'50%',left:0,transform:'translate(-50%,-50%)',opacity:red?1:0,willChange:'left'}}><TB size={20} color="#FFF" gap={3}/></div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'clamp(24px,4vw,60px)'}}>
+        {milestones.map(([num,title,desc],i)=>(<div key={num}><div ref={n=>{if(n)el.current[`t${i}`]=n}} style={{willChange:'transform'}}><div ref={n=>{if(n)el.current[`m${i}`]=n}} style={{opacity:red?1:0}}><div ref={n=>{if(n)el.current[`m1${i}`]=n}}><div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4,marginBottom:12}}>{num}</div><div style={{fontFamily:'Geist',fontSize:'clamp(24px,3vw,40px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:1,marginBottom:12}}>{title}</div><p style={{margin:0,fontSize:'clamp(13px,1vw,15px)',lineHeight:1.6,opacity:.55}}>{desc}</p></div></div></div></div>))}
+      </div>
+    </section>
+  );
+};
+
+const AboutTeamSection=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});const[seen,setSeen]=useState(red);
+  const team=[{name:'Christian Clark',role:'Founder',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/1697726084291.jpeg'},{name:'Himanshu Raikwar',role:'Lead Digital Designer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Himanshu-Raikwar-1024x1024.png'},{name:'Mohammad Muneeb',role:'Lead SEO Specialist',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Mohammad-Muneeb-1024x1024.png'},{name:'Anil Raikwar',role:'Analytics Engineer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Anil-Raikwar.png'},{name:'Haider Ali',role:'SEO Specialist',image:'https://whitelabelresell.com/wp-content/uploads/elementor/thumbs/Haider-Ali-rqg7xs8a0bnqe844b332hjurrpz1a11ezafcq7nbb4.png'},{name:'Brandon Carroll',role:'Acquisition Specialist',image:'https://whitelabelresell.com/wp-content/uploads/elementor/thumbs/Brandon-Carroll-rqg7xs8a0bnqe844b332hjurrpz1a11ezafcq7nbb4.png'}];
+  const offsets=[90,140,70,110,80,130];
+  useEffect(()=>{const s=sec.current;if(!s||red)return;const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){setSeen(true);io.disconnect()}},{threshold:.1,rootMargin:'0px 0px -10% 0px'});io.observe(s);return()=>io.disconnect()},[red]);
+  return(
+    <section ref={sec} style={{background:'#000',color:'#FFF',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #FFF',position:'relative'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:'clamp(40px,5vh,72px)',flexWrap:'wrap',gap:24}}>
+        <div><K>05 / The team</K><h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>THE PEOPLE<br/><span style={{fontWeight:300}}>BEHIND THE WORK.</span></h2></div>
+      </div>
+      <div className="team-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'clamp(16px,2vw,24px)'}}>
+        {team.map(({name,role,image},i)=>{const delay=i*100;return(<div key={name} className="team-card" style={{opacity:seen?1:0,transform:seen?'translateY(0)':`translateY(${offsets[i]}px)`,transition:red?'none':`opacity .7s ${EASE} ${delay}ms, transform .7s ${EASE} ${delay}ms`}}><div className="team-img-wrap" style={{aspectRatio:'1/1',marginBottom:16,overflow:'hidden'}}><img src={image} alt={`${name} — ${role}`} loading={i<3?'eager':'lazy'} style={{width:'100%',height:'100%',objectFit:'cover',display:'block',filter:'grayscale(100%)',transition:'.4s '+EASE}}/></div><div className="team-name" style={{fontFamily:'Geist',fontSize:'clamp(16px,1.3vw,20px)',fontWeight:500,letterSpacing:'-.02em'}}>{name}<span className="team-underline" style={{position:'absolute',bottom:-2,left:0,width:'100%',height:1,background:'#FFF',transformOrigin:'left',transform:'scaleX(0)',transition:'transform .4s '+EASE}}/></div><div className="team-role" style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.45,marginTop:4}}>{role}</div></div>)})}
+      </div>
+      <style>{`.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,2vw,24px)}.team-img-wrap:hover img{transform:scale(1.025)}.team-card:hover .team-underline{transform:scaleX(1)!important}.team-card:hover .team-role{opacity:.8!important}@media(max-width:1024px){.team-grid{grid-template-columns:repeat(2,1fr)!important}}@media(max-width:600px){.team-grid{grid-template-columns:1fr!important}}`}</style>
+    </section>
+  );
+};
+
+const AboutProof=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});
+  useEffect(()=>{if(red)return;const s=sec.current;if(!s)return;let r=0,tr=0;const u=()=>{r=0;const rc=s.getBoundingClientRect(),vh=window.innerHeight;const p=viewportProgress(rc,vh);const e=el.current;if(e.num66){e.num66.style.transform=`translateX(${lerp(-30,0,p)}%)`}if(e.arrow){e.arrow.style.transform=`scaleX(${range(p,.2,.45)})`}if(e.num444){e.num444.style.transform=`translateX(${lerp(30,0,p)}%)`}if(e.tb){e.tb.style.transform=`scaleY(${range(p,.3,.5)})`}if(e.label){e.label.style.opacity=range(p,.4,.6)}};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red]);
+  return(
+    <section ref={sec} style={{background:'#FFF',color:'#000',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #000',overflow:'hidden'}}>
+      <K>07 / What the model produces</K>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'clamp(16px,3vw,40px)',flexWrap:'wrap',marginBottom:'clamp(24px,3vh,40px)'}}>
+        <div ref={n=>{if(n)el.current.num66=n}} style={{fontFamily:'Geist',fontSize:'clamp(80px,14vw,200px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.9,willChange:'transform'}}>66</div>
+        <div ref={n=>{if(n)el.current.arrow=n}} style={{display:'flex',alignItems:'center',gap:8,transformOrigin:'left',transform:red?'scaleX(1)':'scaleX(0)'}}><div style={{width:'clamp(40px,6vw,80px)',height:2,background:'#000'}}/><TB size={20} color="#000" gap={3}/><div style={{width:'clamp(40px,6vw,80px)',height:2,background:'#000'}}/></div>
+        <div style={{position:'relative'}}>
+          <div ref={n=>{if(n)el.current.num444=n}} style={{fontFamily:'Geist',fontSize:'clamp(80px,14vw,200px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.9,willChange:'transform'}}>444</div>
+          <div ref={n=>{if(n)el.current.tb=n}} style={{position:'absolute',bottom:-8,right:0,display:'flex',gap:3,alignItems:'flex-end',height:48,overflow:'hidden',transformOrigin:'bottom',transform:red?'scaleY(1)':'scaleY(0)',willChange:'transform'}}>{[.66,1,.82].map((h,i)=><span key={i} style={{width:5,height:`${h*100}%`,background:'#000'}}/>)}</div>
+        </div>
+      </div>
+      <div ref={n=>{if(n)el.current.label=n}} style={{textAlign:'center',opacity:red?.5:0}}>
+        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:8}}>MONTHLY LEADS · GUILD GOLF CARTS</div>
+        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.35}}>JANUARY 2024 → JUNE 2025</div>
+      </div>
+    </section>
+  );
+};
+
+const AboutPage=({onNav})=>(
+  <React.Fragment>
+    <AboutHero/>
+    <AboutPurpose/>
+    <AboutJourney/>
+    <AboutTeamSection/>
+    <AboutProof/>
+    <Footer onNav={onNav}/>
+  </React.Fragment>
+);
+
+
+/* ╔════════════════════════════════════════════════════════════╗
+   ║  PAGE: CASE STUDIES                                      ║
+   ╚════════════════════════════════════════════════════════════╝ */
+
+const WorkHero=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});const[phase,setPhase]=useState(red?7:0);
+  useEffect(()=>{if(red){setPhase(7);return}const timers=[setTimeout(()=>setPhase(1),0),setTimeout(()=>setPhase(2),150),setTimeout(()=>setPhase(3),350),setTimeout(()=>setPhase(4),550),setTimeout(()=>setPhase(5),800),setTimeout(()=>setPhase(6),1100),setTimeout(()=>setPhase(7),1400)];return()=>timers.forEach(clearTimeout)},[red]);
+  useEffect(()=>{if(red)return;const s=sec.current;if(!s)return;let r=0,tr=0;const u=()=>{r=0;const rc=s.getBoundingClientRect(),vh=window.innerHeight;const p=stickyProgress(rc,vh);const e=el.current;try{if(e.hl)e.hl.style.transform=`translateY(${lerp(0,-60,p)}px)`;if(e.hl2)e.hl2.style.transform=`translateY(${lerp(0,-40,p)}px)`;if(e.tbWrap)e.tbWrap.style.transform=`translateY(${lerp(0,-80,p)}px) rotate(${lerp(0,2,p)}deg)`;if(e.bg)e.bg.style.transform=`translateY(calc(-50% + ${lerp(0,60,p)}px)) scale(${lerp(1,1.1,p)})`;if(e.meta)e.meta.style.transform=`translateY(${lerp(0,15,p)}px)`}catch(err){}};const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)}},[red]);
+  return(
+    <section ref={sec} style={{height:'200vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',alignItems:'center'}}>
+        <div style={{position:'absolute',top:0,left:0,right:0,height:1,background:'rgba(255,255,255,.08)',zIndex:1}}>
+          <div style={{height:'100%',background:'rgba(255,255,255,.3)',transformOrigin:'left',transform:phase>=2?'scaleX(1)':'scaleX(0)',transition:`transform .8s ${EASE}`}}/>
+        </div>
+        <div ref={n=>{if(n)el.current.bg=n}} style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',fontFamily:'Geist',fontSize:'clamp(100px,20vw,360px)',fontWeight:700,letterSpacing:'-.06em',lineHeight:.82,opacity:phase>=1?.03:0,whiteSpace:'nowrap',pointerEvents:'none',zIndex:0,transition:'opacity 1s ease'}}>PROOF</div>
+        <div style={{position:'absolute',right:'8vw',top:'50%',transform:'translateY(-50%)',zIndex:2}}>
+          <div ref={n=>{if(n)el.current.tbWrap=n}} style={{display:'flex',gap:'clamp(12px,2vw,28px)',alignItems:'flex-end',height:'clamp(120px,30vh,280px)'}}>
+            {[0,1,2].map(i=>{const h=[.66,1,.82][i];const enters=['120%','-120%','120%'];return(<div key={i} style={{width:'clamp(16px,2.5vw,36px)',height:`${h*100}%`,background:'#FFF',transformOrigin:i===1?'top':'bottom',transform:phase>=4?'translateY(0)':'translateY('+enters[i]+')',transition:`transform .8s cubic-bezier(.34,1.56,.64,1) ${i*120+400}ms`}}/>)})}
+          </div>
+        </div>
+        <div style={{position:'absolute',left:'6vw',top:'50%',transform:'translateY(-50%)',zIndex:3,maxWidth:'55vw'}}>
+          <div ref={n=>{if(n)el.current.meta=n}} style={{marginBottom:'clamp(16px,2vh,32px)',opacity:phase>=7?1:0,transform:phase>=7?'translateY(0)':'translateY(10px)',transition:'all .6s ease'}}><K>Case studies · three engagements, real numbers</K></div>
+          <div style={{overflow:'hidden'}}><h1 ref={n=>{if(n)el.current.hl=n}} style={{margin:0,fontFamily:'Geist',fontSize:'clamp(56px,9vw,160px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.88,clipPath:phase>=6?'inset(0 0 0% 0)':'inset(0 0 100% 0)',transition:`clip-path .8s ${EASE}`}}>QUIET WORK.</h1></div>
+          <div style={{overflow:'hidden',marginTop:'clamp(4px,1vh,12px)'}}><h1 ref={n=>{if(n)el.current.hl2=n}} style={{margin:0,fontFamily:'Geist',fontSize:'clamp(56px,9vw,160px)',fontWeight:300,fontStyle:'italic',letterSpacing:'-.05em',lineHeight:.88,clipPath:phase>=6?'inset(0 0 0% 0)':'inset(0 0 100% 0)',transition:`clip-path .8s ${EASE} .15s`}}>LOUD RESULTS.</h1></div>
+        </div>
+        <div style={{position:'absolute',bottom:28,left:32,display:'flex',alignItems:'center',gap:14,zIndex:6}}>
+          <span style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:phase>=7?.4:0,transition:'opacity .5s ease .3s'}}>/01 · scroll</span>
+          <div style={{width:32,height:1,background:'rgba(255,255,255,.2)',position:'relative',overflow:'hidden'}}><div style={{position:'absolute',top:0,left:0,height:'100%',width:'100%',background:'#FFF',transformOrigin:'left',transform:phase>=7?'scaleX(1)':'scaleX(0)',transition:`transform 1.2s ${EASE}`}}/></div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const WorkCaseIndex=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const[hovered,setHovered]=useState(null);
+  return(
+    <section ref={sec} style={{background:'#000',color:'#FFF',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #FFF',position:'relative'}}>
+      <K>02 / Case index</K>
+      <div style={{display:'flex',flexDirection:'column',gap:0}}>
+        {CASES.map((c,i)=>{const isHovered=hovered===i;return(
+          <div key={c.id} onMouseEnter={()=>setHovered(i)} onMouseLeave={()=>setHovered(null)} style={{display:'grid',gridTemplateColumns:'80px 1fr auto',alignItems:'center',gap:'clamp(16px,3vw,48px)',padding:'clamp(24px,4vh,48px) 0',borderBottom:i<2?'1px solid rgba(255,255,255,.12)':'none',cursor:'default',color:'#FFF'}}>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(48px,7vw,100px)',fontWeight:700,letterSpacing:'-.05em',lineHeight:.85,opacity:isHovered?.15:.06,transition:'opacity .4s ease'}}>{c.id}</div>
+            <div>
+              <div style={{fontFamily:'Geist',fontSize:'clamp(28px,4vw,56px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:.95,transform:isHovered?'translateX(12px)':'translateX(0)',transition:'transform .4s ease'}}>{c.name}</div>
+              {isHovered&&(<div style={{marginTop:8,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,display:'flex',gap:12,flexWrap:'wrap'}}>{c.services.split(' + ').map(s=><span key={s}>{s}</span>)}</div>)}
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <div style={{display:'flex',gap:3,alignItems:'flex-end',height:32,opacity:isHovered?1:.3,transition:'opacity .4s ease'}}>{[.66,1,.82].map((h,j)=><span key={j} style={{width:4,height:`${h*100}%`,background:'#FFF',transform:isHovered?'scaleY(1.3)':'scaleY(1)',transition:'transform .4s ease'}}/>)}</div>
+              <span style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:isHovered?.8:.3,transition:'opacity .4s ease'}}>→</span>
+            </div>
+          </div>
+        )})}
+      </div>
+    </section>
+  );
+};
+
+const WorkCaseGuild=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});const[phase,setPhase]=useState(red?4:0);
+  const c=CASES[0];const startCount=useCountUp(c.start,1800,phase>=1);const endCount=useCountUp(c.end,2200,phase>=3);const multCount=useCountUp(670,2000,phase>=3);
+  useEffect(()=>{if(red){setPhase(4);return}const timers=[setTimeout(()=>setPhase(1),0),setTimeout(()=>setPhase(2),800),setTimeout(()=>setPhase(3),1800),setTimeout(()=>setPhase(4),2800)];return()=>timers.forEach(clearTimeout)},[red]);
+  return(
+    <section ref={sec} style={{height:'280vh',position:'relative',background:'#FFF',color:'#000',borderTop:'1px solid #000'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex'}}>
+        <div ref={n=>{if(n)el.current.identity=n}} style={{width:'35vw',borderRight:'1px solid #000',padding:'clamp(40px,5vw,80px)',display:'flex',flexDirection:'column',justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4,marginBottom:24}}>CASE {c.id}</div>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(32px,4vw,56px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:.95,marginBottom:16}}>{c.name}</div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,lineHeight:1.8}}>{c.category}<br/>{c.services}<br/>{c.year}</div>
+          </div>
+          <div style={{display:'flex',gap:6,alignItems:'flex-end',height:48}}>{[.66,1,.82].map((h,i)=><span key={i} style={{width:6,height:`${h*100}%`,background:'#000'}}/>)}</div>
+        </div>
+        <div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',padding:'clamp(40px,5vw,80px)',position:'relative',overflow:'hidden'}}>
+          <div style={{opacity:phase>=1?1:0,transform:phase>=1?'translateY(0)':'translateY(40px)',transition:'all .8s ease',marginBottom:'clamp(40px,6vh,80px)'}}>
+            <K>01 / The start</K>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(72px,12vw,180px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.85}}>{startCount}</div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:12,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginTop:8}}>monthly leads · jan 2024</div>
+          </div>
+          <div style={{opacity:phase>=2?1:0,transform:phase>=2?'translateY(0)':'translateY(40px)',transition:'all .8s ease .2s',marginBottom:'clamp(40px,6vh,80px)'}}>
+            <K>02 / The system</K>
+            <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+              {c.systems.map((s,i)=>(<div key={s} style={{padding:'10px 16px',border:'1px solid #000',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:phase>=2?1:0,transform:phase>=2?'translateY(0)':'translateY(10px)',transition:`all .5s ease ${i*100}ms`}}>{s}</div>))}
+            </div>
+          </div>
+          <div style={{opacity:phase>=3?1:0,transform:phase>=3?'translateY(0)':'translateY(40px)',transition:'all .8s ease .4s'}}>
+            <K>03 / The result</K>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(72px,12vw,180px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.85}}>{endCount}</div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:12,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginTop:8}}>monthly leads · jun 2025</div>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(24px,3vw,40px)',fontWeight:300,letterSpacing:'-.03em',marginTop:16,opacity:.6}}>{multCount/100}× growth</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const WorkPage=({onNav})=>(
+  <React.Fragment>
+    <WorkHero/>
+    <WorkCaseIndex/>
+    <WorkCaseGuild/>
+    <Footer onNav={onNav}/>
+  </React.Fragment>
+);
+
+
+/* ╔════════════════════════════════════════════════════════════╗
+   ║  PAGE: TEAM                                              ║
+   ╚════════════════════════════════════════════════════════════╝ */
+
+const TeamHero=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});const[phase,setPhase]=useState(red?6:0);
+  useEffect(()=>{if(red){setPhase(6);return}const timers=[setTimeout(()=>setPhase(1),100),setTimeout(()=>setPhase(2),300),setTimeout(()=>setPhase(3),500),setTimeout(()=>setPhase(4),700),setTimeout(()=>setPhase(5),900),setTimeout(()=>setPhase(6),1100)];return()=>timers.forEach(clearTimeout)},[red]);
+  return(
+    <section ref={sec} style={{height:'180vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',alignItems:'center',padding:'0 6vw'}}>
+        <div style={{position:'absolute',top:0,left:0,right:0,height:1,background:'rgba(255,255,255,.08)',zIndex:1}}><div style={{height:'100%',background:'rgba(255,255,255,.25)',transformOrigin:'left',transform:phase>=1?'scaleX(1)':'scaleX(0)',transition:red?'none':`transform .8s ${EASE}`}}/></div>
+        <div ref={n=>{if(n)el.current.tb=n}} style={{position:'absolute',top:'50%',right:'12vw',transform:'translateY(-50%)',zIndex:3}}>
+          <div style={{display:'flex',gap:12,alignItems:'flex-end',height:80}}>{[0,1,2].map(i=>{const enters=['120%','-120%','120%'];return(<div key={i} style={{width:14,transformOrigin:i===1?'top':'bottom',transform:phase>=3?'translateY(0)':'translateY('+enters[i]+')',transition:red?'none':`transform .8s ${EASE} ${i*100+300}ms`}}><div style={{width:14,height:80,background:'#FFF',transformOrigin:'bottom',transform:`scaleY(${[.66,1,.82][i]})`}}/></div>)})}</div>
+        </div>
+        <div ref={n=>{if(n)el.current.hl=n}} style={{position:'relative',zIndex:2,maxWidth:'60vw',willChange:'transform'}}>
+          <div style={{overflow:'hidden'}}><h1 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(64px,10vw,160px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.88,transform:phase>=4?'translateY(0)':'translateY(110%)',transition:red?'none':`transform .8s ${EASE}`}}>THE PEOPLE</h1></div>
+          <div style={{overflow:'hidden',marginTop:'clamp(4px,1vh,12px)'}}><h1 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(64px,10vw,160px)',fontWeight:300,fontStyle:'italic',letterSpacing:'-.05em',lineHeight:.88,transform:phase>=4?'translateY(0)':'translateY(110%)',transition:red?'none':`transform .8s ${EASE} .1s`}}>BEHIND THE WORK.</h1></div>
+        </div>
+        <div ref={n=>{if(n)el.current.cp=n}} style={{position:'absolute',bottom:'clamp(40px,6vh,80px)',right:'6vw',maxWidth:380,zIndex:2,opacity:phase>=5?1:0,transition:red?'none':'opacity .6s ease'}}>
+          <p style={{margin:0,fontFamily:'Geist',fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.6,opacity:.65}}>Every profile verified against the live bench. Every name a real person doing real work under your brand.</p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const TeamRoster=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});const[activeDept,setActiveDept]=useState('all');const[seen,setSeen]=useState(red);
+  useEffect(()=>{const s=sec.current;if(!s||red)return;const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){setSeen(true);io.disconnect()}},{threshold:.1,rootMargin:'0px 0px -10% 0px'});io.observe(s);return()=>io.disconnect()},[red]);
+  const filtered=activeDept==='all'?teamData:teamData.filter(m=>m.dept===activeDept);
+  return(
+    <section ref={sec} style={{background:'#000',color:'#FFF',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #FFF',position:'relative'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:'clamp(32px,4vh,56px)',flexWrap:'wrap',gap:24}}>
+        <div><K>03 / The roster</K><h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>THE PEOPLE<br/><span style={{fontWeight:300}}>BEHIND THE WORK.</span></h2></div>
+      </div>
+      <div style={{display:'flex',gap:16,flexWrap:'wrap',marginBottom:'clamp(32px,4vh,56px)',borderBottom:'1px solid rgba(255,255,255,.12)',paddingBottom:16}}>
+        {departments.map(d=>(<button key={d.id} onClick={()=>setActiveDept(d.id)} style={{background:'none',border:'none',cursor:'pointer',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',color:'#FFF',opacity:activeDept===d.id?1:.4,borderBottom:activeDept===d.id?'1px solid #FFF':'1px solid transparent',paddingBottom:4,transition:'all .3s ease'}}>{d.label}</button>))}
+      </div>
+      <div className="roster-grid">
+        {filtered.map((member,i)=>{const delay=i*80;const offset=60+((i*37)%40);return(
+          <div key={member.name} className="roster-card" style={{opacity:seen?1:0,transform:seen?'translateY(0)':`translateY(${offset}px)`,transition:red?'none':`opacity .7s ${EASE} ${delay}ms, transform .7s ${EASE} ${delay}ms`}}>
+            <div className="roster-img-wrap" style={{position:'relative',overflow:'hidden',background:'#111',aspectRatio:'1/1'}}><img src={member.image} alt={`${member.name} — ${member.role}`} loading={i<4?'eager':'lazy'} style={{width:'100%',height:'100%',objectFit:'cover',display:'block',filter:'grayscale(100%) contrast(1.1)',transition:'.5s '+EASE}}/><div style={{position:'absolute',top:12,left:12,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',opacity:.5}}>/{String(i+1).padStart(2,'0')}</div></div>
+            <div style={{padding:'16px 0'}}><div className="roster-name" style={{fontFamily:'Geist',fontSize:'clamp(16px,1.4vw,22px)',fontWeight:500,letterSpacing:'-.02em',position:'relative',display:'inline-block'}}>{member.name}<span className="roster-underline" style={{position:'absolute',bottom:-2,left:0,width:'100%',height:1,background:'#FFF',transformOrigin:'left',transform:'scaleX(0)',transition:'transform .4s '+EASE}}/></div><div className="roster-role" style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.45,marginTop:4}}>{member.role}</div></div>
+          </div>
+        )})}
+      </div>
+      <style>{`.roster-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(16px,2vw,24px)}.roster-img-wrap:hover img{transform:scale(1.04)}.roster-card:hover .roster-underline{transform:scaleX(1)!important}.roster-card:hover .roster-role{opacity:.8!important}@media(max-width:1024px){.roster-grid{grid-template-columns:repeat(3,1fr)!important}}@media(max-width:768px){.roster-grid{grid-template-columns:repeat(2,1fr)!important}}@media(max-width:480px){.roster-grid{grid-template-columns:1fr!important}}`}</style>
+    </section>
+  );
+};
+
+const TeamPage=({onNav})=>(
+  <React.Fragment>
+    <TeamHero/>
+    <TeamRoster/>
+    <Footer onNav={onNav}/>
+  </React.Fragment>
+);
+
+
+/* ╔════════════════════════════════════════════════════════════╗
+   ║  PAGE: CONTACT                                           ║
+   ╚════════════════════════════════════════════════════════════╝ */
+
+const ContactHero=()=>{
+  const red=useReducedMotion();const sec=useRef(null);const el=useRef({});const[phase,setPhase]=useState(red?7:0);
+  useEffect(()=>{if(red){setPhase(7);return}const timers=[setTimeout(()=>setPhase(1),0),setTimeout(()=>setPhase(2),200),setTimeout(()=>setPhase(3),350),setTimeout(()=>setPhase(4),500),setTimeout(()=>setPhase(5),700),setTimeout(()=>setPhase(6),900),setTimeout(()=>setPhase(7),1100)];return()=>timers.forEach(clearTimeout)},[red]);
+  return(
+    <section ref={sec} style={{height:'200vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',alignItems:'center'}}>
+        <div style={{position:'absolute',top:0,left:'42vw',width:1,height:'100vh',background:'rgba(255,255,255,.06)',zIndex:1}}><div ref={n=>{if(n)el.current.rule=n}} style={{height:'100%',background:'rgba(255,255,255,.2)',transformOrigin:'top'}}/></div>
+        <div ref={n=>{if(n)el.current.bg=n}} style={{position:'absolute',top:'50%',left:'6vw',fontFamily:'Geist',fontSize:'clamp(120px,20vw,320px)',fontWeight:700,letterSpacing:'-.06em',lineHeight:.82,opacity:.03,whiteSpace:'nowrap',pointerEvents:'none',zIndex:0}}>QUOTE</div>
+        <div style={{position:'absolute',top:0,left:0,bottom:0,width:'42vw',display:'flex',alignItems:'flex-end',gap:'clamp(16px,2.8vw,40px)',padding:'0 6vw 8vh',pointerEvents:'none',zIndex:2}}>
+          <div ref={n=>{if(n)el.current.tbWrap=n}} style={{display:'flex',gap:'clamp(16px,2.8vw,40px)',alignItems:'flex-end'}}>
+            <div style={{width:'clamp(48px,6vw,100px)',height:'clamp(120px,25vh,280px)',background:'#FFF',transformOrigin:'bottom'}}/>
+            <div style={{width:'clamp(48px,6vw,100px)',height:'clamp(160px,33vh,380px)',background:'#FFF',transformOrigin:'top'}}/>
+            <div style={{width:'clamp(48px,6vw,100px)',height:'clamp(130px,27vh,300px)',background:'#FFF',transformOrigin:'bottom'}}/>
+          </div>
+          <div ref={n=>{if(n)el.current.tbExtend=n}} style={{width:'clamp(48px,6vw,100px)',height:0,background:'#FFF'}}/>
+        </div>
+        <div ref={n=>{if(n)el.current.collapse=n}} style={{position:'absolute',top:0,right:0,bottom:0,width:'56vw',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 6vw 0 4vw',zIndex:3,transformOrigin:'center'}}>
+          <div ref={n=>{if(n)el.current.meta=n}} style={{marginBottom:'clamp(12px,1.5vw,24px)'}}><K>Get a quote · reply within one business day</K></div>
+          <div style={{overflow:'hidden'}}><h1 ref={n=>{if(n)el.current.hl=n}} style={{margin:0,fontFamily:'Geist',fontSize:'clamp(52px,8.5vw,148px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:.88}}>LET'S MAKE YOUR</h1></div>
+          <div style={{overflow:'hidden'}}><h1 ref={n=>{if(n)el.current.hl2=n}} style={{margin:0,fontFamily:'Geist',fontSize:'clamp(52px,8.5vw,148px)',fontWeight:300,fontStyle:'italic',letterSpacing:'-.045em',lineHeight:.88}}>AGENCY LOOK BRILLIANT.</h1></div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const ContactForm=()=>{
+  const red=useReducedMotion();const[focused,setFocused]=useState(null);const services=['SEO','Content','Web build','Paid media','Email','Analytics','AI / Ops'];const[picked,setPicked]=useState([]);const[form,setForm]=useState({name:'',company:'',email:'',msg:''});const[btnHov,setBtnHov]=useState(false);
+  const toggle=s=>setPicked(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s]);
+  const submit=e=>{e.preventDefault();const body=encodeURIComponent(`Name: ${form.name}\nCompany: ${form.company}\nEmail: ${form.email}\nServices: ${picked.join(', ')||'--'}\n\nProject:\n${form.msg}`);window.location.href=`mailto:partners@whitelabelresell.com?subject=${encodeURIComponent('Quote request -- '+(form.company||form.name))}&body=${body}`};
+  const fieldStyle=(isFocused)=>({background:'transparent',border:'none',borderBottom:isFocused?'2px solid #000':'1px solid #000',borderRadius:0,padding:'14px 16px 12px',fontSize:15,color:'#000',fontFamily:'Geist',width:'100%',transition:'border .3s ease'});
+  const labelStyle=(isFocused)=>({fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:isFocused?1:.55,transform:isFocused?'translateY(2px)':'translateY(0)',transition:'opacity .2s ease, transform .2s ease',marginBottom:8,display:'block'});
+  return(
+    <section style={{background:'#FFF',color:'#000',borderTop:'1px solid #000',position:'relative',overflow:'hidden'}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',minHeight:'100vh',position:'relative',zIndex:1}}>
+        <div style={{borderRight:'1px solid #000',padding:'clamp(50px,6vw,90px) 6vw',display:'flex',flexDirection:'column',justifyContent:'space-between',position:'sticky',top:0,height:'100vh'}}>
+          <div>
+            <K>Get a quote</K>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(36px,5vw,64px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92,marginBottom:'clamp(24px,3vh,40px)'}}>REPLY<br/>WITHIN<br/>ONE DAY.</div>
+            <a href="mailto:partners@whitelabelresell.com" style={{fontFamily:'"Geist Mono",monospace',fontSize:12,letterSpacing:'.12em',opacity:.6,borderBottom:'1px solid rgba(0,0,0,.3)',paddingBottom:4,display:'inline-block'}}>partners@whitelabelresell.com</a>
+          </div>
+          <div style={{display:'flex',gap:6,alignItems:'flex-end',height:100}}>{[.66,1,.82].map((h,i)=><span key={i} style={{width:8,height:`${h*100}%`,background:'#000'}}/>)}</div>
+        </div>
+        <div style={{padding:'clamp(50px,6vw,90px) 6vw'}}>
+          <form onSubmit={submit} style={{display:'flex',flexDirection:'column',gap:28}}>
+            <div className="form-row" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:22}}>
+              <label style={{display:'flex',flexDirection:'column'}}><span style={labelStyle(focused==='name')}>Your name</span><input required autoComplete="name" value={form.name} onFocus={()=>setFocused('name')} onBlur={()=>setFocused(null)} onChange={e=>setForm({...form,name:e.target.value})} style={fieldStyle(focused==='name')}/></label>
+              <label style={{display:'flex',flexDirection:'column'}}><span style={labelStyle(focused==='company')}>Company / agency</span><input autoComplete="organization" value={form.company} onFocus={()=>setFocused('company')} onBlur={()=>setFocused(null)} onChange={e=>setForm({...form,company:e.target.value})} style={fieldStyle(focused==='company')}/></label>
+            </div>
+            <div><label style={{display:'flex',flexDirection:'column'}}><span style={labelStyle(focused==='email')}>Email</span><input required type="email" autoComplete="email" value={form.email} onFocus={()=>setFocused('email')} onBlur={()=>setFocused(null)} onChange={e=>setForm({...form,email:e.target.value})} style={fieldStyle(focused==='email')}/></label></div>
+            <div>
+              <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.55,marginBottom:12}}>What do you need? · pick any</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                {services.map(s=>{const on=picked.includes(s);return(<button key={s} type="button" onClick={()=>toggle(s)} style={{padding:'10px 18px',background:on?'#000':'transparent',color:on?'#FFF':'#000',border:'1px solid #000',borderRadius:0,fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.16em',textTransform:'uppercase',cursor:'pointer',transition:'all .25s ease'}}><span style={{display:'flex',alignItems:'center',gap:8}}><span style={{display:'inline-block',width:8,height:8,border:'1px solid '+(on?'#FFF':'#000'),background:on?'#FFF':'transparent',transition:'all .2s ease'}}/>{s}</span></button>)})}
+              </div>
+            </div>
+            <div><label style={{display:'flex',flexDirection:'column'}}><span style={labelStyle(focused==='msg')}>Tell us about the project</span><textarea rows={5} value={form.msg} onFocus={()=>setFocused('msg')} onBlur={()=>setFocused(null)} onChange={e=>setForm({...form,msg:e.target.value})} style={{...fieldStyle(focused==='msg'),resize:'vertical',minHeight:120}}/></label></div>
+            <div><button type="submit" onMouseEnter={()=>setBtnHov(true)} onMouseLeave={()=>setBtnHov(false)} style={{padding:'18px 32px',background:'#000',color:'#FFF',border:'none',borderRadius:0,fontFamily:'"Geist Mono",monospace',fontSize:12,letterSpacing:'.22em',textTransform:'uppercase',fontWeight:600,cursor:'pointer',display:'inline-flex',alignItems:'center',gap:12,transition:'all .3s ease',transform:btnHov?'translateX(4px)':'translateX(0)'}}><TB size={12} color="#FFF"/>SEND THE REQUEST →</button></div>
+          </form>
+          <div style={{marginTop:40,paddingTop:24,borderTop:'1px solid rgba(0,0,0,.12)',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.2em',textTransform:'uppercase',opacity:.6,display:'flex',gap:24,flexWrap:'wrap'}}><span>prefer email? partners@whitelabelresell.com</span><span>· discord for active partners</span></div>
+        </div>
+      </div>
+      <style>{`@media(max-width:768px){.form-row{grid-template-columns:1fr!important}}`}</style>
+    </section>
+  );
+};
+
+const ContactClosing=()=>{
+  const red=useReducedMotion();const[hover,setHover]=useState(false);
+  return(
+    <section style={{minHeight:'100vh',background:'#000',color:'#FFF',position:'relative',overflow:'hidden',borderTop:'1px solid #FFF',display:'flex',flexDirection:'column',justifyContent:'center',padding:'clamp(80px,12vh,140px) 6vw'}}>
+      <div style={{position:'absolute',right:'6vw',top:'50%',transform:'translateY(-50%)',display:'flex',gap:'clamp(12px,2vw,24px)',alignItems:'flex-end',height:'clamp(200px,40vh,400px)',opacity:.06}}>{[.66,1,.82].map((h,i)=><span key={i} style={{width:'clamp(16px,2vw,32px)',height:`${h*100}%`,background:'#FFF'}}/>)}</div>
+      <div style={{marginBottom:'clamp(48px,6vh,80px)',position:'relative',zIndex:1}}>
+        <K>PREFER EMAIL?</K>
+        <div style={{fontFamily:'Geist',fontSize:'clamp(16px,1.5vw,20px)',fontWeight:300,opacity:.4,marginTop:12}}>We reply within one business day.</div>
+      </div>
+      <div style={{position:'relative',zIndex:1}}>
+        <a href="mailto:partners@whitelabelresell.com" onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} style={{fontFamily:'Geist',fontSize:'clamp(40px,7vw,112px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92,borderBottom:hover?'3px solid #FFF':'3px solid rgba(255,255,255,.2)',paddingBottom:12,display:'inline-block',transition:'border-color .3s ease'}}>partners@<br/>whitelabelresell.com</a>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:'clamp(16px,2vw,32px)',marginTop:'clamp(48px,6vh,80px)',position:'relative',zIndex:1}}>
+        <div style={{flex:1,height:1,background:'rgba(255,255,255,.15)'}}/>
+        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4,whiteSpace:'nowrap'}}>DISCORD FOR ACTIVE PARTNERS</div>
+      </div>
+    </section>
+  );
+};
+
+const ContactPage=({onNav})=>(
+  <React.Fragment>
+    <ContactHero/>
+    <ContactForm/>
+    <ContactClosing/>
+    <Footer onNav={onNav}/>
+  </React.Fragment>
+);
+
+
+/* ══════════════════════════════════════════════════════════════
+   APP — page router
+   ══════════════════════════════════════════════════════════════ */
+const App=()=>{
+  const[page,setPage]=useState('home');
+  const onNav=(p)=>{setPage(p);window.scrollTo(0,0)};
+  const pages={home:HomePage,work:WorkPage,about:AboutPage,team:TeamPage,contact:ContactPage};
+  const Page=pages[page];
+  return(
+    <React.Fragment>
+      <HUD page={page} onNav={onNav}/>
+      <ScrollPct/>
+      <Page onNav={onNav}/>
+    </React.Fragment>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

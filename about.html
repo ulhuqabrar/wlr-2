@@ -799,14 +799,14 @@ const CTA=()=>{
       const p=viewportProgress(rc,vh);
       const e=el.current;
 
+      // Three taper wipe — opposing directions
+      if(e.b0){const w=Math.max(0,Math.min(1,(p-.08)/.35));e.b0.style.transform=`scaleX(${w})`}
+      if(e.b1){const w=Math.max(0,Math.min(1,(p-.14)/.35));e.b1.style.transform=`scaleX(${w})`}
+      if(e.b2){const w=Math.max(0,Math.min(1,(p-.20)/.35));e.b2.style.transform=`scaleX(${w})`}
+
       if(e.hl)e.hl.style.transform=`translateY(${lerp(50,0,p)}px)`;
       if(e.sub)e.sub.style.transform=`translateY(${lerp(20,0,p)}px)`;
       if(e.btns)e.btns.style.transform=`translateY(${lerp(20,0,p)}px)`;
-
-      const sep=range(p,.15,.4);
-      if(e.b0)e.b0.style.transform=`translateX(${sep*-30}px) translateY(${lerp(-30,0,p)}px)`;
-      if(e.b1)e.b1.style.transform=`translateY(${lerp(-30,0,p)}px)`;
-      if(e.b2)e.b2.style.transform=`translateX(${sep*30}px) translateY(${lerp(-30,0,p)}px)`;
     };
     const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
     u();
@@ -818,19 +818,42 @@ const CTA=()=>{
   return(
     <section ref={sec} style={{minHeight:'100vh',background:invert?'#FFF':'#000',color:invert?'#000':'#FFF',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',padding:'80px 6vw',position:'relative',borderTop:`1px solid ${invert?'#000':'#FFF'}`,overflow:'hidden',transition:'background .5s cubic-bezier(.2,.8,.2,1), color .5s cubic-bezier(.2,.8,.2,1)'}}>
 
-      {/* ThreeBar that separates */}
-      <div style={{display:'flex',gap:8,alignItems:'flex-end',height:64,marginBottom:40}}>
-        {[0,1,2].map(i=>(
-          <div key={i} ref={n=>{if(n)el.current[`b${i}`]=n}} style={{
-            width:10,height:64,background:invert?'#000':'#FFF',
-            transformOrigin:'center',
-            willChange:'transform',
-            transition:'background .5s cubic-bezier(.2,.8,.2,1)',
-          }}/>
-        ))}
+      {/* Three vertical tapers */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'clamp(12px,2vw,32px)',marginBottom:40,width:'100%'}}>
+        {/* Left taper */}
+        <div ref={n=>{if(n)el.current.b0=n}} style={{
+          flex:'0 0 clamp(50px,10vw,160px)',
+          height:'clamp(140px,35vh,320px)',
+          background:invert?'#000':'#FFF',
+          transformOrigin:'left center',
+          transform:'scaleX(0)',
+          willChange:'transform',
+          transition:'background .5s cubic-bezier(.2,.8,.2,1)',
+        }}/>
+        {/* Middle taper — dominant, covers the headline */}
+        <div ref={n=>{if(n)el.current.b1=n}} style={{
+          flex:'1 1 clamp(200px,40vw,600px)',
+          maxWidth:'clamp(300px,50vw,700px)',
+          height:'clamp(320px,72vh,660px)',
+          background:invert?'#000':'#FFF',
+          transformOrigin:'right center',
+          transform:'scaleX(0)',
+          willChange:'transform',
+          transition:'background .5s cubic-bezier(.2,.8,.2,1)',
+        }}/>
+        {/* Right taper */}
+        <div ref={n=>{if(n)el.current.b2=n}} style={{
+          flex:'0 0 clamp(50px,10vw,160px)',
+          height:'clamp(140px,35vh,320px)',
+          background:invert?'#000':'#FFF',
+          transformOrigin:'right center',
+          transform:'scaleX(0)',
+          willChange:'transform',
+          transition:'background .5s cubic-bezier(.2,.8,.2,1)',
+        }}/>
       </div>
 
-      <div ref={n=>{if(n)el.current.hl=n}} style={{textAlign:'center',willChange:'transform'}}>
+      <div ref={n=>{if(n)el.current.hl=n}} style={{textAlign:'center',willChange:'transform',position:'relative',zIndex:2}}>
         <h2 style={{
           margin:0,fontFamily:'Geist',fontSize:'clamp(40px,7vw,110px)',fontWeight:500,
           letterSpacing:'-.045em',lineHeight:1.02,
@@ -839,11 +862,11 @@ const CTA=()=>{
         </h2>
       </div>
 
-      <p ref={n=>{if(n)el.current.sub=n}} style={{marginTop:24,fontFamily:'Geist',fontSize:'clamp(16px,1.5vw,22px)',fontWeight:300,fontStyle:'italic',opacity:.5,willChange:'transform'}}>
+      <p ref={n=>{if(n)el.current.sub=n}} style={{marginTop:24,fontFamily:'Geist',fontSize:'clamp(16px,1.5vw,22px)',fontWeight:300,fontStyle:'italic',opacity:.5,willChange:'transform',position:'relative',zIndex:2}}>
         You might.
       </p>
 
-      <div ref={n=>{if(n)el.current.btns=n}} style={{display:'flex',gap:20,marginTop:48,flexWrap:'wrap',justifyContent:'center',willChange:'transform'}}>
+      <div ref={n=>{if(n)el.current.btns=n}} style={{display:'flex',gap:20,marginTop:48,flexWrap:'wrap',justifyContent:'center',willChange:'transform',position:'relative',zIndex:2}}>
         <a href="contact.html"
           onMouseEnter={()=>{setHov1(true);setHovBtn(true)}} onMouseLeave={()=>{setHov1(false);setHovBtn(false)}}
           style={{

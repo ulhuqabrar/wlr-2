@@ -1288,8 +1288,11 @@ const BigNumber=()=>{
 
 /* ═══ 11 FINAL CTA ═══ */
 const FinalCTA=()=>{
+  const[inv,setInv]=useState(false);
+  const bg=inv?'#000':'#FFF';
+  const fg=inv?'#FFF':'#000';
   return(
-    <section style={{background:'#FFF',color:'#000',position:'relative',overflow:'hidden',borderTop:'1px solid rgba(0,0,0,0.2)',padding:'clamp(60px,8vh,100px) 6vw'}}>
+    <section style={{background:bg,color:fg,position:'relative',overflow:'hidden',borderTop:`1px solid ${inv?'rgba(255,255,255,0.2)':'rgba(0,0,0,0.2)'}`,padding:'clamp(60px,8vh,100px) 6vw',transition:'background .4s ease, color .4s ease, border-color .4s ease'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:32}}>
         <div>
           <h3 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(32px,4vw,60px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:1.1}}>
@@ -1297,13 +1300,15 @@ const FinalCTA=()=>{
           </h3>
           <p style={{margin:'16px 0 0',fontSize:16,opacity:.7}}>We reply to every enquiry within one business day.</p>
         </div>
-        <a href="contact.html" style={{
+        <a href="contact.html"
+          onMouseEnter={()=>setInv(true)} onMouseLeave={()=>setInv(false)}
+          style={{
           display:'inline-flex',alignItems:'center',gap:16,padding:'24px 40px',
-          background:'#000',color:'#FFF',textDecoration:'none',cursor:'pointer',
+          background:fg,color:bg,textDecoration:'none',cursor:'pointer',
           fontFamily:'"Geist Mono",monospace',fontSize:14,letterSpacing:'.22em',textTransform:'uppercase',fontWeight:600,
-          transition:'background 0.3s, color 0.3s',
-        }} onMouseEnter={e=>{e.currentTarget.style.background='#333';e.currentTarget.style.color='#FFF'}} onMouseLeave={e=>{e.currentTarget.style.background='#000';e.currentTarget.style.color='#FFF'}}>
-          <TB size={14} color="#FFF"/>Get a quote →
+          transition:'background .4s ease, color .4s ease',
+        }}>
+          <TB size={14} color={bg}/>Get a quote →
         </a>
       </div>
     </section>

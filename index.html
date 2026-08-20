@@ -176,7 +176,7 @@ const Hero=()=>{
       {/* ── THREEBAR HERO OBJECT ── */}
       <div style={{
         position:'absolute',top:0,left:0,bottom:0,width:'42vw',
-        display:'flex',alignItems:'center',
+        display:'flex',alignItems:'flex-end',
         gap:'clamp(16px,2.8vw,40px)',padding:'0 6vw',
         pointerEvents:'none',zIndex:1,
       }}>
@@ -189,13 +189,13 @@ const Hero=()=>{
             width:'clamp(56px,7.5vw,120px)',
             height: red?'56%':(phase>=1?'56%':'0%'),
             background:'#FFF',
-            transformOrigin:'center',
-            transform: red?'none':(phase>=1?'translateY(0)':'translateY(50%)'),
+            transformOrigin:'bottom',
+            transform: red?'none':(phase>=1?'translateY(0)':'translateY(100%)'),
             transition: red?'none':`transform .55s ${ease} .25s, height .5s ${easeMed}`,
             willChange:phase>=4?'transform':'auto',
           }}
         />
-        {/* BAR 02 — snaps downward from above */}
+        {/* BAR 02 — tallest, rises from below */}
         <div
           ref={n=>{if(n)e.current.b1=n}}
           onMouseEnter={()=>barHover(1)} onMouseLeave={barLeave}
@@ -204,8 +204,8 @@ const Hero=()=>{
             width:'clamp(56px,7.5vw,120px)',
             height: red?'72%':(phase>=1?'72%':'0%'),
             background:'#FFF',
-            transformOrigin:'center',
-            transform: red?'none':(phase>=1?'translateY(0)':'translateY(-50%)'),
+            transformOrigin:'bottom',
+            transform: red?'none':(phase>=1?'translateY(0)':'translateY(100%)'),
             transition: red?'none':`transform .58s ${ease} .30s, height .5s ${easeMed}`,
             willChange:phase>=4?'transform':'auto',
           }}
@@ -219,8 +219,8 @@ const Hero=()=>{
             width:'clamp(56px,7.5vw,120px)',
             height: red?'62%':(phase>=1?'62%':'0%'),
             background:'#FFF',
-            transformOrigin:'center',
-            transform: red?'none':(phase>=1?'translateY(0)':'translateY(50%)'),
+            transformOrigin:'bottom',
+            transform: red?'none':(phase>=1?'translateY(0)':'translateY(100%)'),
             transition: red?'none':`transform .62s ${ease} .35s, height .5s ${easeMed}`,
             willChange:phase>=4?'transform':'auto',
           }}

@@ -384,18 +384,27 @@ const SellDeliver=()=>{
   return(
     <section ref={sec} style={{height:'280vh',position:'relative',borderTop:'1px solid #FFF'}}>
       <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',background:'#000',color:'#FFF'}}>
-        <div style={{position:'absolute',inset:0,pointerEvents:'none'}}>
+
+        {/* Layer 1 — tapers (back) */}
+        <div style={{position:'absolute',inset:0,pointerEvents:'none',zIndex:1}}>
           <div ref={n=>{if(n)e.current.b0=n}} style={{position:'absolute',left:0,right:0,top:'18%',height:'12%',background:'#FFF',transformOrigin:'left center',transform:'scaleX(0)',willChange:'transform',mixBlendMode:'difference'}}/>
           <div ref={n=>{if(n)e.current.b1=n}} style={{position:'absolute',left:0,right:0,top:'41%',height:'12%',background:'#FFF',transformOrigin:'right center',transform:'scaleX(0)',willChange:'transform',mixBlendMode:'difference'}}/>
           <div ref={n=>{if(n)e.current.b2=n}} style={{position:'absolute',left:0,right:0,top:'64%',height:'12%',background:'#FFF',transformOrigin:'left center',transform:'scaleX(0)',willChange:'transform',mixBlendMode:'difference'}}/>
         </div>
-        <div ref={n=>{if(n)e.current.fr=n}} style={{position:'absolute',top:90,left:32,right:32,display:'flex',justifyContent:'space-between',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:0,mixBlendMode:'difference',color:'#FFF'}}>
-          <span>The partnership, in two words</span><span ref={n=>{if(n)e.current.pc=n}}>000%</span>
-        </div>
-        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none',mixBlendMode:'difference'}}>
+
+        {/* Layer 2 — headline (mix-blend inverts where tapers cross) */}
+        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none',zIndex:2,mixBlendMode:'difference'}}>
           <h2 ref={n=>{if(n)e.current.hd=n}} style={{margin:0,textAlign:'center',fontFamily:'Geist',fontSize:'clamp(64px,14vw,200px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:1.08}}>You sell.</h2>
         </div>
-        <p style={{position:'absolute',bottom:90,left:32,right:32,margin:0,maxWidth:620,fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.6,opacity:.7,mixBlendMode:'difference'}}>You own the relationship, the pitch and the invoice. We run production behind the scenes — on your templates, in your voice, to your deadlines. Your clients never learn our name, and that is the entire point.</p>
+
+        {/* Layer 3 — meta labels (top) */}
+        <div ref={n=>{if(n)e.current.fr=n}} style={{position:'absolute',top:90,left:32,right:32,display:'flex',justifyContent:'space-between',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:0,zIndex:3,mixBlendMode:'difference',color:'#FFF'}}>
+          <span>The partnership, in two words</span><span ref={n=>{if(n)e.current.pc=n}}>000%</span>
+        </div>
+
+        {/* Layer 3 — bottom copy */}
+        <p style={{position:'absolute',bottom:90,left:32,right:32,margin:0,maxWidth:620,fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.6,opacity:.7,zIndex:3,mixBlendMode:'difference'}}>You own the relationship, the pitch and the invoice. We run production behind the scenes — on your templates, in your voice, to your deadlines. Your clients never learn our name, and that is the entire point.</p>
+
       </div>
     </section>
   );

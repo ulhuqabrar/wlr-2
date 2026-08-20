@@ -1321,20 +1321,14 @@ const FinalCTA=()=>{
   return(
     <section ref={sec} style={{minHeight:'100vh',background:invert?'#FFF':'#000',color:invert?'#000':'#FFF',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',padding:'80px 6vw',position:'relative',borderTop:`1px solid ${invert?'#000':'#FFF'}`,overflow:'hidden',transition:'background .5s cubic-bezier(.2,.8,.2,1), color .5s cubic-bezier(.2,.8,.2,1)'}}>
 
-      <div style={{display:'flex',gap:8,alignItems:'flex-end',height:64,marginBottom:40}}>
-        {[0,1,2].map(i=>(
-          <div key={i} ref={n=>{if(n)el.current[`b${i}`]=n}} style={{width:10,height:64,background:invert?'#000':'#FFF',willChange:'transform',transition:'background .5s cubic-bezier(.2,.8,.2,1)'}}/>
-        ))}
-      </div>
-
       <div ref={n=>{if(n)el.current.hl=n}} style={{textAlign:'center',willChange:'transform'}}>
         <h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(40px,7vw,110px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:1.02}}>
-          YOUR CLIENTS<br/>DON'T NEED<br/>ANOTHER VENDOR.
+          Tell us about your<br/>next project.
         </h2>
       </div>
 
-      <p ref={n=>{if(n)el.current.sub=n}} style={{marginTop:24,fontFamily:'Geist',fontSize:'clamp(16px,1.5vw,22px)',fontWeight:300,fontStyle:'italic',opacity:.5,willChange:'transform'}}>
-        You might.
+      <p ref={n=>{if(n)el.current.sub=n}} style={{marginTop:24,fontFamily:'"Geist Mono",monospace',fontSize:'clamp(13px,1.2vw,16px)',opacity:.5,willChange:'transform'}}>
+        We reply to every enquiry within one business day.
       </p>
 
       <div ref={n=>{if(n)el.current.btns=n}} style={{display:'flex',gap:20,marginTop:48,flexWrap:'wrap',justifyContent:'center',willChange:'transform'}}>
@@ -1349,17 +1343,6 @@ const FinalCTA=()=>{
             display:'inline-flex',alignItems:'center',gap:12,
           }}>
           <TB size={14} color="currentColor"/>GET A QUOTE →
-        </a>
-        <a href="case-studies.html"
-          onMouseEnter={()=>setHov2(true)} onMouseLeave={()=>setHov2(false)}
-          style={{
-            padding:'20px 36px',border:`1px solid ${invert?'rgba(0,0,0,.2)':'rgba(255,255,255,.2)'}`,
-            background:'transparent',color:invert?'rgba(0,0,0,.6)':'rgba(255,255,255,.6)',
-            fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:'.22em',
-            textTransform:'uppercase',
-            transition:'all .4s cubic-bezier(.2,.8,.2,1)',
-          }}>
-          SEE OUR WORK →
         </a>
       </div>
 
